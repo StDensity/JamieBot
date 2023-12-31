@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 
 
@@ -14,9 +15,11 @@ class Thread(commands.Cog):
         for thread in threads:
             tags.append([tags.name for tags in thread.applied_tags])
             titles.append(thread)
-
+        embed_threads = discord.Embed(colour=discord.Colour.dark_teal())
         for index, (title, tag) in enumerate(zip(titles, tags), start=1):
-            await ctx.send(f"```{index:03d}. Title: {title}, Tags: {tag}```")
+            embed_threads.add_field(name=f"{index:03d} {title}", value=f"Tags: {tag}", inline=False)
+
+        await ctx.send(embed=embed_threads)
 
 
 async def setup(bot):
