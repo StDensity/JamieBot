@@ -4,10 +4,8 @@ from discord.ext import commands
 
 class Thread(commands.Cog):
 
-    @commands.command(name="get_threads", description='Used to get all the threads in a specific channel.')
-    async def get_threads(self, ctx, channel_id: int):
-
-        channel = ctx.bot.get_channel(channel_id)
+    @discord.app_commands.command(name='push_threads')
+    async def push_threads(self, interaction: discord.Interaction, channel: discord.ForumChannel):
 
         threads = channel.threads
         tags = []
@@ -19,7 +17,7 @@ class Thread(commands.Cog):
         for index, (title, tag) in enumerate(zip(titles, tags), start=1):
             embed_threads.add_field(name=f"{index:03d} {title}", value=f"Tags: {tag}", inline=False)
 
-        await ctx.send(embed=embed_threads)
+        await interaction.response.send_message(embed=embed_threads)
 
 
 async def setup(bot):

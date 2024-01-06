@@ -15,7 +15,8 @@ async def on_ready():
     await bot.load_extension('cmds.basic')
     await bot.load_extension('cmds.thread')
 
-    await bot.tree.sync()
+    tree_sync = await bot.tree.sync()
+    print(tree_sync, 'synced')
 
 
 if __name__ == '__main__':
