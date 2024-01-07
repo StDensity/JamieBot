@@ -1,11 +1,10 @@
 import requests
-from Bot.settings import TRELLO_LABELS
-import json
+from Bot.settings import TRELLO_API, TRELLO_TOKEN, FRONTEND_ID, BACKEND_ID
 
 
 class TrelloRequests:
 
-    def __init__(self, api_key, api_token):
+    def __init__(self, api_key=TRELLO_API, api_token=TRELLO_TOKEN):
         self.api_key = api_key
         self.api_token = api_token
         self.param = {'key': self.api_key, 'token': self.api_token}
@@ -95,15 +94,17 @@ class TrelloRequests:
 
     # todo Handle error when the label is not found
     def post_cards(self, list_id, name, desc, discord_labels, pos='top'):
-        label_id = []
-        for discord_label in discord_labels:
-            for trello_label in TRELLO_LABELS:
-                if discord_label == trello_label['name']:
-                    label_id.append(trello_label['id'])
+        label_ids = []
+        trello_labels = self.get_labels(FRONTEND_ID)
+        for discord_label in discord_labels:  # Retrieves the id of the labels with same name as in the discord post.
+            for trello_label in trello_labels:
+                if discord_label.lower() == trello_label['name'].lower():
+                    print(f"{discord_label.lower()} and {trello_label['name'].lower()}")
+                    label_ids.append(trello_label['id'])
 
         url = f"{self.base_url}cards"
         param = {'key': self.api_key, 'token': self.api_token, 'idList': list_id, 'name': name, 'desc': desc,
-                 'pos': pos, 'idLabels': label_id}
+                 'pos': pos, 'idLabels': label_ids}
 
         response = requests.post(url, params=param, timeout=10)
 

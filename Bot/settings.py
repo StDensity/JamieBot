@@ -9,4 +9,5 @@ TRELLO_API = os.getenv("TRELLO_API")
 TRELLO_SECRET = os.getenv("TRELLO_SECRET")
 TRELLO_TOKEN = os.getenv("TRELLO_TOKEN")
 
-TRELLO_LABELS = os.getenv("TRELLO_LABELS")
+FRONTEND_ID = os.getenv("FRONTEND_ID")
+BACKEND_ID = os.getenv("BACKEND_ID")

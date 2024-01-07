@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from Bot.cmds import trello_api
 
 
 class SelectPosts(discord.ui.Select):
@@ -13,19 +14,23 @@ class SelectPosts(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.send_message(self.values)
+        self.view.value = self.values
+        self.view.stop()
 
 
 class DropdownView(discord.ui.View):
     def __init__(self):
         super().__init__()
+        self.value = None
 
-        self.add_item(SelectPosts())
+        posts = SelectPosts()
+        self.add_item(posts)
 
 
-class Thread(commands.Cog):
+class PushThread(commands.Cog):
 
     @discord.app_commands.command(name='push_threads')
-    async def push_threads(self, interaction: discord.Interaction, channel: discord.ForumChannel):
+    async def get_threads(self, interaction: discord.Interaction, channel: discord.ForumChannel):
 
         threads = channel.threads
         tags = []
@@ -37,8 +42,26 @@ class Thread(commands.Cog):
         for index, (title, tag) in enumerate(zip(titles, tags), start=1):
             embed_threads.add_field(name=f"{index:03d} {title}", value=f"Tags: {tag}", inline=False)
 
-        await interaction.response.send_message(embed=embed_threads, view=DropdownView())
+        dropdown = DropdownView()
+        await interaction.response.send_message(embed=embed_threads, view=dropdown)
+
+        await dropdown.wait()  # Waits for the view to stop.
+
+        index = dropdown.value  # Gets the values from the dropdown.
+        push_items = []
+        for i in index:
+            push_items.append({'index': i, 'name': titles[int(i) - 1].name, 'tags': tags[int(i) - 1]})
+
+        print(push_items)
+
+        my_requests = trello_api.TrelloRequests()
+        # Pushes cards to the list.
+        # todo Backend and frontend tag filtering
+        # todo Duplicates filtering. Only do this at the end
+        for item in push_items:
+            my_requests.post_cards(list_id='659286cf31d0562ab64614fc', name=item['name'], desc="Testing desc", discord_labels=item['tags'])
+            print(f"name={item['name']}, desc=Testing desc, discord_labels={item['tags']}")
 
 
 async def setup(bot):
-    await bot.add_cog(Thread(bot))
+    await bot.add_cog(PushThread(bot))
