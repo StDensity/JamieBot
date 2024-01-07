@@ -102,13 +102,17 @@ class TrelloRequests:
                     print(f"{discord_label.lower()} and {trello_label['name'].lower()}")
                     label_ids.append(trello_label['id'])
 
-        url = f"{self.base_url}cards"
-        param = {'key': self.api_key, 'token': self.api_token, 'idList': list_id, 'name': name, 'desc': desc,
-                 'pos': pos, 'idLabels': label_ids}
+        #   Ignoring posts without trello labels.
+        if label_ids:
+            url = f"{self.base_url}cards"
+            param = {'key': self.api_key, 'token': self.api_token, 'idList': list_id, 'name': name, 'desc': desc,
+                     'pos': pos, 'idLabels': label_ids}
 
-        response = requests.post(url, params=param, timeout=10)
+            response = requests.post(url, params=param, timeout=10)
 
-        return response.status_code
+            return response.status_code
+        else:
+            return "Nothing to sent"
 
     def delete_cards(self, card_id):
         """Deletes a card based on the provided id."""

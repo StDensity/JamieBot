@@ -4,13 +4,11 @@ from Bot.cmds import trello_api
 
 
 class SelectPosts(discord.ui.Select):
-    def __init__(self):
-        options = [
-            discord.SelectOption(label='1', value="1"),
-            discord.SelectOption(label='2', value='2'),
-            discord.SelectOption(label='3', value='3')
-        ]
-        super().__init__(options=options, placeholder="Which posts do you want to push.", max_values=3)
+    def __init__(self, len_thread):
+        options = []
+        for i in range (1, len_thread+1):
+            options.append(discord.SelectOption(label=str(i), value=str(i)))
+        super().__init__(options=options, placeholder="Which posts do you want to push.", max_values=len_thread)
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.send_message(self.values)
@@ -19,11 +17,11 @@ class SelectPosts(discord.ui.Select):
 
 
 class DropdownView(discord.ui.View):
-    def __init__(self):
+    def __init__(self, len_thread):
         super().__init__()
         self.value = None
 
-        posts = SelectPosts()
+        posts = SelectPosts(len_thread=len_thread)
         self.add_item(posts)
 
 
@@ -42,7 +40,7 @@ class PushThread(commands.Cog):
         for index, (title, tag) in enumerate(zip(titles, tags), start=1):
             embed_threads.add_field(name=f"{index:03d} {title}", value=f"Tags: {tag}", inline=False)
 
-        dropdown = DropdownView()
+        dropdown = DropdownView(len_thread=len(threads))
         await interaction.response.send_message(embed=embed_threads, view=dropdown)
 
         await dropdown.wait()  # Waits for the view to stop.
