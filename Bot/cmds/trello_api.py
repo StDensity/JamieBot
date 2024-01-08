@@ -99,7 +99,6 @@ class TrelloRequests:
         for discord_label in discord_labels:  # Retrieves the id of the labels with same name as in the discord post.
             for trello_label in trello_labels:
                 if discord_label.lower() == trello_label['name'].lower():
-                    print(f"{discord_label.lower()} and {trello_label['name'].lower()}")
                     label_ids.append(trello_label['id'])
 
         #   Ignoring posts without trello labels.
@@ -112,7 +111,7 @@ class TrelloRequests:
 
             return response.status_code
         else:
-            return "Nothing to sent"
+            return "No matching tags found."
 
     def delete_cards(self, card_id):
         """Deletes a card based on the provided id."""

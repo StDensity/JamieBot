@@ -50,15 +50,23 @@ class PushThread(commands.Cog):
         for i in index:
             push_items.append({'index': i, 'name': titles[int(i) - 1].name, 'tags': tags[int(i) - 1]})
 
-        print(push_items)
-
         my_requests = trello_api.TrelloRequests()
         # Pushes cards to the list.
         # todo Backend and frontend tag filtering
         # todo Duplicates filtering. Only do this at the end
         for item in push_items:
-            my_requests.post_cards(list_id='659286cf31d0562ab64614fc', name=item['name'], desc="Testing desc", discord_labels=item['tags'])
-            print(f"name={item['name']}, desc=Testing desc, discord_labels={item['tags']}")
+            # todo use variable to store the list_id
+            response = my_requests.post_cards(list_id='659286cf31d0562ab64614fc', name=item['name'], desc="Testing desc", discord_labels=item['tags'])
+
+
+            # TO CHECK IF EVERYTHING IS WORKING
+            if response == 200:
+                # print(f"\nPushed: name={item['name']}, desc=Testing desc, discord_labels={item['tags']}\n")
+                await interaction.followup.send(f"\nPushed: name={item['name']}, desc=Testing desc, discord_labels={item['tags']}\n", ephemeral=True)
+            else:
+                # print(f"\nCouldn't push: name={item['name']}, desc=Testing desc, discord_labels={item['tags']} \nReason: {response}\n")
+                await interaction.followup.send(f"\nCouldn't push: name={item['name']}, desc=Testing desc, discord_labels={item['tags']} \nReason: {response}\n", ephemeral=True)
+
 
 
 async def setup(bot):
