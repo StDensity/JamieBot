@@ -11,3 +11,6 @@ TRELLO_TOKEN = os.getenv("TRELLO_TOKEN")
 
 FRONTEND_ID = os.getenv("FRONTEND_ID")
 BACKEND_ID = os.getenv("BACKEND_ID")
+
+FRONTEND_lIST_ID = os.getenv("FRONTEND_LIST_ID")
+BACKEND_LIST_ID = os.getenv("BACKEND_LIST_ID")

@@ -12,5 +12,9 @@ class Basic(commands.Cog):
             "Hiz " + (interaction.user.mention if interaction.user.nick else interaction.user.name))
 
 
+class Test(discord.ui.View):
+    pass
+
+
 async def setup(bot):
     await bot.add_cog(Basic(bot))
