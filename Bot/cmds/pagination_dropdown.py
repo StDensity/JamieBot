@@ -12,7 +12,7 @@ class SelectPosts(discord.ui.Select):
         self.view.value = self.values
         self.view.stop()
 
-
+# TODO disable buttons when there is only one page
 
 class PaginationDropdown(discord.ui.View):
     def __init__(self, interaction, titles, tags, ids):
@@ -22,7 +22,7 @@ class PaginationDropdown(discord.ui.View):
         self.titles = titles
         self.tags = tags
         self.ids = ids
-        self.sep = 6  # No. of items in each page.
+        self.sep = 25 # No. of items in each page.
         self.len_items = len(self.ids)
         self.current_page = 0
         self.embeds = []

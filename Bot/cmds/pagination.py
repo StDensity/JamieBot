@@ -34,10 +34,11 @@ class Pagination(discord.ui.View):
         embed = discord.Embed(colour=self.color)
         for index, item in enumerate(data, start=1):
             embed.add_field(name=f"{index:03} {item[self.field_name]}", value=f"ID: {item[self.field_value]}", inline=False)
-            if not index % self.sep:
-                self.total_page += 1
-                self.embeds.append(copy.deepcopy(embed))
-                embed.clear_fields()
+            if not index == self.len_items:  # To check if we need more pages.
+                if not index % self.sep:
+                    self.total_page += 1
+                    self.embeds.append(copy.deepcopy(embed))
+                    embed.clear_fields()
 
         self.embeds.append(embed)
         await self.send_embed()
