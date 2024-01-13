@@ -5,6 +5,7 @@ from Bot.settings import FRONTEND_lIST_ID, BACKEND_LIST_ID
 from Bot.cmds.pagination import Pagination
 from Bot.cmds.pagination_dropdown import PaginationDropdown
 
+
 class SelectPosts(discord.ui.Select):
     def __init__(self, len_thread, titles):
         options = []
@@ -40,12 +41,12 @@ class Threads(commands.Cog):
             tags.append([tags.name for tags in thread.applied_tags])
             titles.append(thread.name.title())
             ids.append(thread.id)
-        # print(tags,'\n', titles,'\n', id)
-        # print('No. of items:', len(ids))
+
         threads_embed = PaginationDropdown(interaction=interaction, titles=titles, tags=tags, ids=ids)
         await threads_embed.paginate()
         await threads_embed.wait()
         index = threads_embed.dropdown_value
+        await threads_embed.disable_all_buttons()
 
         push_items = []
         for i in index:
@@ -62,13 +63,14 @@ class Threads(commands.Cog):
             # TO CHECK IF EVERYTHING IS WORKING
             if response == 200:
                 # print(f"\nPushed: name={item['name']}, desc=Testing desc, discord_labels={item['tags']}\n")
-                await interaction.followup.send \
-                    (f"\nPushed: name={item['name']}, desc=Testing desc, discord_labels={item['tags']}\n", ephemeral=True)
+                await interaction.followup.send(
+                    f"\nPushed: name={item['name']}, desc=Testing desc, discord_labels={item['tags']}\n",
+                    ephemeral=True)
             else:
 
-                await interaction.followup.send(f"\nCouldn't push: name={item['name']}, desc=Testing desc, discord_labels={item['tags']} \nReason: {response}\n", ephemeral=True)
-
-
+                await interaction.followup.send(
+                    f"\nCouldn't push: name={item['name']}, desc=Testing desc, discord_labels={item['tags']} \nReason: {response}\n",
+                    ephemeral=True)
 
     #   Command trello_cards
     #   Returns all the cards in trello list.
