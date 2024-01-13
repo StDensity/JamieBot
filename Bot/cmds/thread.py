@@ -1,17 +1,15 @@
-
-
 import discord
 from discord.ext import commands
 from Bot.cmds import trello_api
 from Bot.settings import FRONTEND_lIST_ID, BACKEND_LIST_ID
 from Bot.cmds.pagination import Pagination
-
+from Bot.cmds.pagination_dropdown import PaginationDropdown
 
 class SelectPosts(discord.ui.Select):
     def __init__(self, len_thread, titles):
         options = []
         #   todo change the max len of char in title
-        for i,title in enumerate(titles, start=1):
+        for i, title in enumerate(titles, start=1):
             options.append(discord.SelectOption(label=title.name, value=str(i)))
         super().__init__(options=options, placeholder="Which posts do you want to push.", max_values=len_thread)
 
@@ -34,61 +32,54 @@ class Threads(commands.Cog):
 
     @discord.app_commands.command(name='push_threads')
     async def push_threads(self, interaction: discord.Interaction, channel: discord.ForumChannel):
-
         threads = channel.threads
         tags = []
         titles = []
+        ids = []
         for thread in threads:
             tags.append([tags.name for tags in thread.applied_tags])
-            titles.append(thread)
-        embed_threads = discord.Embed(colour=discord.Colour.dark_teal(), title="Forum Posts List")
-        for index, (title, tag) in enumerate(zip(titles, tags), start=1):
-            embed_threads.add_field(name=f"{index:03d} {title}", value=f"Tags: {tag}", inline=False)
-        dropdown = DropdownView(len_thread=len(threads), titles = titles)
-        await interaction.response.send_message(embed=embed_threads, view=dropdown)
+            titles.append(thread.name.title())
+            ids.append(thread.id)
+        # print(tags,'\n', titles,'\n', id)
+        # print('No. of items:', len(ids))
+        threads_embed = PaginationDropdown(interaction=interaction, titles=titles, tags=tags, ids=ids)
+        await threads_embed.paginate()
+        await threads_embed.wait()
+        index = threads_embed.dropdown_value
 
-        await dropdown.wait()  # Waits for the view to stop.
-
-        index = dropdown.value  # Gets the values from the dropdown.
         push_items = []
         for i in index:
-            push_items.append({'index': i, 'name': titles[int(i) - 1].name, 'tags': tags[int(i) - 1]})
+            push_items.append({'index': i, 'name': titles[int(i) - 1], 'tags': tags[int(i) - 1]})
 
         my_requests = trello_api.TrelloRequests()
         # Pushes cards to the list.
         # todo Backend and frontend tag filtering
         # todo Duplicates filtering. Only do this at the end
         for item in push_items:
-            # todo use variable to store the list_id
-            response = my_requests.post_cards(list_id='659286cf31d0562ab64614fc', name=item['name'], desc="Testing desc", discord_labels=item['tags'])
-
+            response = my_requests.post_cards(list_id=FRONTEND_lIST_ID, name=item['name'],
+                                              desc="Testing desc", discord_labels=item['tags'])
 
             # TO CHECK IF EVERYTHING IS WORKING
             if response == 200:
                 # print(f"\nPushed: name={item['name']}, desc=Testing desc, discord_labels={item['tags']}\n")
-                await interaction.followup.send(f"\nPushed: name={item['name']}, desc=Testing desc, discord_labels={item['tags']}\n", ephemeral=True)
+                await interaction.followup.send \
+                    (f"\nPushed: name={item['name']}, desc=Testing desc, discord_labels={item['tags']}\n", ephemeral=True)
             else:
-                # print(f"\nCouldn't push: name={item['name']}, desc=Testing desc, discord_labels={item['tags']} \nReason: {response}\n")
+
                 await interaction.followup.send(f"\nCouldn't push: name={item['name']}, desc=Testing desc, discord_labels={item['tags']} \nReason: {response}\n", ephemeral=True)
 
 
-    # todo pagination
+
+    #   Command trello_cards
+    #   Returns all the cards in trello list.
     @discord.app_commands.command(name="trello_cards")
     @discord.app_commands.choices(boards=[discord.app_commands.Choice(name='Frontend', value=FRONTEND_lIST_ID),
                                           discord.app_commands.Choice(name='Backend', value=BACKEND_LIST_ID)])
     async def get_trello_cards(self, interaction: discord.Interaction, boards: discord.app_commands.Choice[str]):
         my_requests = trello_api.TrelloRequests()
-        cards = my_requests.get_cards(boards.value)  #  Boards.value returns the list id of the board
-        embed_cards = discord.Embed(colour=discord.Colour.light_embed(), title="Trello Cards List")
-        for index, card in enumerate(cards, start=1):
-            embed_cards.add_field(name=f"{index:03} {card['name']}", value=f"ID: {card['id']}", inline=False)
-            if index >= 25:
-                break
-
-        # await interaction.response.send_message(embed=embed_cards)
-        # await asyncio.sleep(2)
-        new_embed = Pagination()
-        await new_embed.paginate(interaction=interaction, data=cards)
+        cards = my_requests.get_cards(boards.value)  # boards.value returns the list id of the board
+        new_embed = Pagination(interaction=interaction, data=cards, field_name='name', field_value='id')
+        await new_embed.paginate()
 
 
 async def setup(bot):
