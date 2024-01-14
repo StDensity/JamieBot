@@ -1,7 +1,8 @@
 import discord
 import copy
-from Bot.cmds.trello_api import TrelloRequests
-from Bot.settings import FRONTEND_lIST_ID
+from Bot.cmds.trello_api import TrelloRequests, get_matching_trello_labels
+from Bot.settings import FRONTEND_lIST_ID, FRONTEND_ID
+
 
 # Used to generate options for the dropdown view.
 class SelectPosts(discord.ui.Select):
@@ -14,6 +15,7 @@ class SelectPosts(discord.ui.Select):
         self.view.value = self.values
         self.view.stop()
 
+
 # TODO disable buttons when there is only one page
 
 # Performs the pagination
@@ -25,7 +27,7 @@ class PaginationDropdown(discord.ui.View):
         self.titles = titles
         self.tags = tags
         self.ids = ids
-        self.sep = 10 # No. of items in each page.
+        self.sep = 10  # No. of items in each page.
         self.len_items = len(self.ids)
         self.current_page = 0
         self.embeds = []
@@ -49,9 +51,22 @@ class PaginationDropdown(discord.ui.View):
     async def create_embed(self):
         embed = discord.Embed(colour=self.color)
         options = []
+        trello_labels = TrelloRequests().get_labels(board_id=FRONTEND_ID)
         for index, (title, tag, ids) in enumerate(zip(self.titles, self.tags, self.ids), start=1):
-            embed.add_field(name=f"{index:03} {title}", value=f"Tags: {tag}", inline=False)
-            options.append(discord.SelectOption(label=title, value=str(index)))
+            red_icon = False
+            for label in trello_labels:
+                for item in tag:
+                    if label['name'].lower() == item.lower():
+                        red_icon = True
+                        break
+
+            if not red_icon:  # Adds red emoji to the field if it cannot be pushed.
+                embed.add_field(name=f"{index:03} {title} 🚫", value=f"Tags: {tag}", inline=False)
+                options.append(discord.SelectOption(label=f"{title} 🚫", value=str(index)))
+            else:
+                embed.add_field(name=f"{index:03} {title}", value=f"Tags: {tag}", inline=False)
+                options.append(discord.SelectOption(label=title, value=str(index)))
+            # Optimise this, maybe the first if statement should be nested.
             if not self.len_items == index:
                 if not index % self.sep:
                     self.embeds.append(copy.deepcopy(embed))
@@ -69,7 +84,6 @@ class PaginationDropdown(discord.ui.View):
             self.posts = SelectPosts(self.options_list, self.current_page)
             self.add_item(self.posts)
         await self.interaction.edit_original_response(embed=self.embeds[self.current_page], view=self)
-
 
     async def disable_all_buttons(self):
         self.first_page_button.disabled = True
@@ -95,8 +109,6 @@ class PaginationDropdown(discord.ui.View):
     def enable_front_buttons(self):
         self.last_page_button.disabled = False
         self.next_page_button.disabled = False
-
-
 
     @discord.ui.button(label='|<', style=discord.ButtonStyle.primary)
     async def first_page_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -151,7 +163,7 @@ async def push_to_trello(index, titles, tags, interaction):
     # todo Duplicates filtering. Only do this at the end
     for item in push_items:
         response = my_requests.post_labelled_cards(list_id=FRONTEND_lIST_ID, name=item['name'],
-                                          desc="Testing desc", discord_labels=item['tags'])
+                                                   desc="Testing desc", discord_labels=item['tags'])
 
         # TO CHECK IF EVERYTHING IS WORKING
         if response == 200:

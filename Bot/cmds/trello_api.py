@@ -1,6 +1,5 @@
 import requests
 from Bot.settings import TRELLO_API, TRELLO_TOKEN, FRONTEND_ID, BACKEND_ID
-from Bot.cmds.functions.functions import get_matching_trello_labels
 
 
 class TrelloRequests:
@@ -110,3 +109,20 @@ class TrelloRequests:
         response = requests.delete(url, params=self.param)
 
         return response.status_code
+
+
+def get_matching_trello_labels(discord_labels):
+    """
+    :param discord_labels: Labels of the corresponding posts.
+    :return: list of corresponding trello label ids.
+    """
+    label_ids = []
+    trello_labels = TrelloRequests().get_labels(board_id=FRONTEND_ID)
+    for discord_label in discord_labels:  # Retrieves the id of the labels with same name as in the discord post.
+        for trello_label in trello_labels:
+            if discord_label.lower() == trello_label['name'].lower():
+                label_ids.append(trello_label['id'])
+
+    return label_ids
+
+
