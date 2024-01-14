@@ -3,31 +3,7 @@ from discord.ext import commands
 from Bot.cmds import trello_api
 from Bot.settings import FRONTEND_lIST_ID, BACKEND_LIST_ID
 from Bot.cmds.pagination import Pagination
-from Bot.cmds.pagination_dropdown import PaginationDropdown
-
-
-class SelectPosts(discord.ui.Select):
-    def __init__(self, len_thread, titles):
-        options = []
-        #   todo change the max len of char in title
-        for i, title in enumerate(titles, start=1):
-            options.append(discord.SelectOption(label=title.name, value=str(i)))
-        super().__init__(options=options, placeholder="Which posts do you want to push.", max_values=len_thread)
-
-    async def callback(self, interaction: discord.Interaction):
-        await interaction.response.send_message(self.values)
-        self.view.value = self.values
-        self.view.stop()
-
-
-class DropdownView(discord.ui.View):
-    def __init__(self, len_thread, titles):
-        super().__init__()
-        self.value = None
-
-        posts = SelectPosts(len_thread=len_thread, titles=titles)
-        self.add_item(posts)
-
+from Bot.cmds.pagination_dropdown import PaginationDropdown, push_to_trello
 
 class Threads(commands.Cog):
 
@@ -48,32 +24,9 @@ class Threads(commands.Cog):
         index = threads_embed.dropdown_value
         await threads_embed.disable_all_buttons()
 
-        push_items = []
-        for i in index:
-            push_items.append({'index': i, 'name': titles[int(i) - 1], 'tags': tags[int(i) - 1]})
+        await push_to_trello(index=index, titles=titles, tags=tags, interaction=interaction)
 
-        my_requests = trello_api.TrelloRequests()
-        # Pushes cards to the list.
-        # todo Backend and frontend tag filtering
-        # todo Duplicates filtering. Only do this at the end
-        for item in push_items:
-            response = my_requests.post_cards(list_id=FRONTEND_lIST_ID, name=item['name'],
-                                              desc="Testing desc", discord_labels=item['tags'])
-
-            # TO CHECK IF EVERYTHING IS WORKING
-            if response == 200:
-                # print(f"\nPushed: name={item['name']}, desc=Testing desc, discord_labels={item['tags']}\n")
-                await interaction.followup.send(
-                    f"\nPushed: name={item['name']}, desc=Testing desc, discord_labels={item['tags']}\n",
-                    ephemeral=True)
-            else:
-
-                await interaction.followup.send(
-                    f"\nCouldn't push: name={item['name']}, desc=Testing desc, discord_labels={item['tags']} \nReason: {response}\n",
-                    ephemeral=True)
-
-    #   Command trello_cards
-    #   Returns all the cards in trello list.
+    #   Command to return all cards in the list from trello.
     @discord.app_commands.command(name="trello_cards")
     @discord.app_commands.choices(boards=[discord.app_commands.Choice(name='Frontend', value=FRONTEND_lIST_ID),
                                           discord.app_commands.Choice(name='Backend', value=BACKEND_LIST_ID)])

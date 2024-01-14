@@ -1,7 +1,9 @@
 import discord
 import copy
+from Bot.cmds.trello_api import TrelloRequests
+from Bot.settings import FRONTEND_lIST_ID
 
-
+# Used to generate options for the dropdown view.
 class SelectPosts(discord.ui.Select):
     def __init__(self, options_list, current_page):
         super().__init__(options=options_list[current_page], placeholder="Which posts do you want to push.",
@@ -14,6 +16,7 @@ class SelectPosts(discord.ui.Select):
 
 # TODO disable buttons when there is only one page
 
+# Performs the pagination
 class PaginationDropdown(discord.ui.View):
     def __init__(self, interaction, titles, tags, ids):
         super().__init__()
@@ -134,3 +137,29 @@ class PaginationDropdown(discord.ui.View):
         await interaction.response.defer()
         await self.disable_all_buttons()
         self.stop()
+
+
+# Pushes selected items (index) to trello.
+async def push_to_trello(index, titles, tags, interaction):
+    push_items = []
+    for i in index:
+        push_items.append({'index': i, 'name': titles[int(i) - 1], 'tags': tags[int(i) - 1]})
+
+    my_requests = TrelloRequests()
+    # Pushes cards to the list.
+    # todo Backend and frontend tag filtering
+    # todo Duplicates filtering. Only do this at the end
+    for item in push_items:
+        response = my_requests.post_cards(list_id=FRONTEND_lIST_ID, name=item['name'],
+                                          desc="Testing desc", discord_labels=item['tags'])
+
+        # TO CHECK IF EVERYTHING IS WORKING
+        if response == 200:
+            await interaction.followup.send(
+                f"\nPushed: name={item['name']}, desc=Testing desc, discord_labels={item['tags']}\n",
+                ephemeral=True)
+        else:
+
+            await interaction.followup.send(
+                f"\nCouldn't push: name={item['name']}, desc=Testing desc, discord_labels={item['tags']} \nReason: {response}\n",
+                ephemeral=True)
