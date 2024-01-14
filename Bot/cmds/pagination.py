@@ -13,7 +13,7 @@ class Pagination(discord.ui.View):
         self.data = data
         self.field_name = field_name
         self.field_value = field_value
-        self.sep = 25  # No. of items in each page.
+        self.sep = 10  # No. of items in each page.
         self.len_items = len(self.data)
         self.current_page = 0
         self.embeds = []

@@ -22,7 +22,7 @@ class PaginationDropdown(discord.ui.View):
         self.titles = titles
         self.tags = tags
         self.ids = ids
-        self.sep = 25 # No. of items in each page.
+        self.sep = 10 # No. of items in each page.
         self.len_items = len(self.ids)
         self.current_page = 0
         self.embeds = []
