@@ -53,10 +53,10 @@ class TrelloRequests:
             data = response.json()
             cards = []
 
-            for items in data:
-                cards.append({'name': items['name'], 'id': items['id']})
+            # for items in data:
+            #     cards.append({'name': items['name'], 'id': items['id']})
 
-            return cards
+            return data
         else:
             return response.status_code
 
