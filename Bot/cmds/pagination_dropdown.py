@@ -150,7 +150,7 @@ async def push_to_trello(index, titles, tags, interaction):
     # todo Backend and frontend tag filtering
     # todo Duplicates filtering. Only do this at the end
     for item in push_items:
-        response = my_requests.post_cards(list_id=FRONTEND_lIST_ID, name=item['name'],
+        response = my_requests.post_labelled_cards(list_id=FRONTEND_lIST_ID, name=item['name'],
                                           desc="Testing desc", discord_labels=item['tags'])
 
         # TO CHECK IF EVERYTHING IS WORKING
