@@ -49,6 +49,9 @@ class PaginationDropdown(discord.ui.View):
         self.dropdown_value = self.posts.values
 
     async def create_embed(self):
+        red_emoji = "<:no:1196474019281653832>"
+        blue_emoji = "<:blue_yes:1196474006115713175>"
+        green_emoji = "<:green_yes:1196474012117778442>"
         embed = discord.Embed(colour=self.color)
         options = []
         trello_labels = TrelloRequests().get_labels(board_id=FRONTEND_ID)
@@ -61,11 +64,11 @@ class PaginationDropdown(discord.ui.View):
                         break
 
             if not red_icon:  # Adds red emoji to the field if it cannot be pushed.
-                embed.add_field(name=f"{index:03} {title} 🚫", value=f"Tags: {tag}", inline=False)
-                options.append(discord.SelectOption(label=f"{title} 🚫", value=str(index)))
+                embed.add_field(name=f"{red_emoji} {index:03} {title} ", value=f"Tags: {tag}", inline=False)
+                options.append(discord.SelectOption(label=f"{title}", emoji=red_emoji, value=str(index)))
             else:
-                embed.add_field(name=f"{index:03} {title}", value=f"Tags: {tag}", inline=False)
-                options.append(discord.SelectOption(label=title, value=str(index)))
+                embed.add_field(name=f"{green_emoji} {index:03} {title}", value=f"Tags: {tag}", inline=False)
+                options.append(discord.SelectOption(label=f"{title}", emoji=green_emoji, value=str(index)))
             # Optimise this, maybe the first if statement should be nested.
             if not self.len_items == index:
                 if not index % self.sep:
@@ -98,7 +101,7 @@ class PaginationDropdown(discord.ui.View):
         self.first_page_button.disabled = True
         self.back_page_button.disabled = True
 
-    def disable_front_buttons(self):
+    def disable_next_buttons(self):
         self.next_page_button.disabled = True
         self.last_page_button.disabled = True
 
@@ -106,7 +109,7 @@ class PaginationDropdown(discord.ui.View):
         self.first_page_button.disabled = False
         self.back_page_button.disabled = False
 
-    def enable_front_buttons(self):
+    def enable_next_buttons(self):
         self.last_page_button.disabled = False
         self.next_page_button.disabled = False
 
@@ -115,14 +118,14 @@ class PaginationDropdown(discord.ui.View):
         await interaction.response.defer()
         self.current_page = 0
         self.disable_back_buttons()
-        self.enable_front_buttons()
+        self.enable_next_buttons()
         await self.update_message()
 
     @discord.ui.button(label='<', style=discord.ButtonStyle.primary)
     async def back_page_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
         self.current_page -= 1
-        self.enable_front_buttons()
+        self.enable_next_buttons()
         if self.current_page == 0:
             self.disable_back_buttons()
         await self.update_message()
@@ -133,7 +136,7 @@ class PaginationDropdown(discord.ui.View):
         self.current_page += 1
         self.enable_back_buttons()
         if self.current_page == self.total_page:
-            self.disable_front_buttons()
+            self.disable_next_buttons()
         await self.update_message()
 
     @discord.ui.button(label='>|', style=discord.ButtonStyle.primary)
@@ -141,7 +144,7 @@ class PaginationDropdown(discord.ui.View):
         await interaction.response.defer()
         self.current_page = self.total_page
         self.enable_back_buttons()
-        self.disable_front_buttons()
+        self.disable_next_buttons()
         await self.update_message()
 
     @discord.ui.button(label="Stop", style=discord.ButtonStyle.primary)

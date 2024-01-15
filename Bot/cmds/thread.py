@@ -34,9 +34,10 @@ class Threads(commands.Cog):
     async def get_trello_cards(self, interaction: discord.Interaction, boards: discord.app_commands.Choice[str]):
         my_requests = TrelloRequests()
         cards = my_requests.get_cards(boards.value)  # boards.value returns the list id of the board
-        print(cards)
         new_embed = Pagination(interaction=interaction, data=cards, field_name='name', field_value='id')
         await new_embed.paginate()
+        await new_embed.wait()
+        await new_embed.disable_all_buttons()
 
 
 async def setup(bot):
