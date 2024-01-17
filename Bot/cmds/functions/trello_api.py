@@ -87,6 +87,12 @@ class TrelloRequests:
         else:
             return response.status_code
 
+    def post_comment(self, card_id, comment):
+        url = f"{self.base_url}cards/{card_id}/actions/comments"
+        param = {'key': self.api_key, 'token': self.api_token, 'text': {comment}}
+        response = requests.post(url, params=param, timeout=20)
+        return response
+
     # todo Handle error when the label is not found
     def post_labelled_cards(self, list_id, name, description, discord_labels, pos='top'):
         label_ids = get_matching_trello_labels(discord_labels=discord_labels)
@@ -97,9 +103,9 @@ class TrelloRequests:
 
             response = requests.post(url, params=param, timeout=10)
 
-            return response.status_code
+            return response
         else:
-            return "No matching tags found."
+            return "Error: No labels"
 
     def delete_cards(self, card_id):
         """Deletes a card based on the provided id."""

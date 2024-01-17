@@ -1,12 +1,13 @@
 import discord
 import copy
-from Bot.cmds.trello_api import TrelloRequests, get_matching_trello_labels
+from Bot.cmds.functions.trello_api import TrelloRequests
 from Bot.settings import FRONTEND_lIST_ID, FRONTEND_ID
 import re
 
 
 def get_cards_descriptions(list_details):
     """
+    Returns all the card description in list_details as a list.
     :param list_details: Receives the details about trello list
     :return: Returns the cards descriptions as a list.
     """
@@ -26,6 +27,7 @@ def get_cards_descriptions(list_details):
 
 def check_desc(description, post_id):
     """
+    To check if post_id is in description.
     :param description: Takes in the cards descriptions as a list.
     :param post_id: ID of the discord post.
     :return: Boolean value, True if the post_id is found in the descriptions list.
@@ -34,6 +36,20 @@ def check_desc(description, post_id):
         return True
     else:
         return False
+
+
+def check_labels(trello_labels, tag):
+    """
+    To check if tags are present in trello_labels.
+    :param trello_labels: Takes in all the labels in trello board as list of list.
+    :param tag: The tag to check if it's in the trello board.
+    :return: Boolean value, True if tag not in trello_labels:
+    """
+    for label in trello_labels:
+        for item in tag:
+            if label['name'].lower() == item.lower():
+                return False
+    return True
 
 
 # Used to generate options for the dropdown view.
@@ -68,6 +84,8 @@ class PaginationDropdown(discord.ui.View):
         self.options_list = []
         self.post = None
         self.dropdown_value = None
+        self.can_push = []  # A list denoting if the post can be pushed. 0 If it cannot be pushed because of no corresponding tag.
+        # 1 if it cannot be pushed because, it's already there. # 2 if it can be pushed.
 
     async def paginate(self):
         await self.create_embed()
@@ -82,7 +100,7 @@ class PaginationDropdown(discord.ui.View):
 
     async def create_embed(self):
         cant_push_emoji = "<:no:1196474019281653832>"
-        can_push_emoji = "<:blue_box:1196687124523647017>"
+        can_push_emoji = "<:grey_box:1196687143867781270>"
         already_pushed_emoji = "<:green_yes:1196474012117778442>"
         embed = discord.Embed(colour=self.color)
         options = []
@@ -91,24 +109,24 @@ class PaginationDropdown(discord.ui.View):
         cards_descriptions = get_cards_descriptions(
             list_details=list_details)  # Card description is the id stored in trello cards.
         for index, (title, tag, post_id) in enumerate(zip(self.titles, self.tags, self.ids), start=1):
-            show_cant_push_emoji = True
+            show_cant_push_emoji = check_labels(trello_labels=trello_labels, tag=tag)
             show_already_pushed_emoji = check_desc(description=cards_descriptions, post_id=post_id)
-            # TODO functionise show_can't_push_emoji
-            for label in trello_labels:
-                for item in tag:
-                    if label['name'].lower() == item.lower():
-                        show_cant_push_emoji = False
-                        break
 
-            if show_cant_push_emoji:  # Adds red emoji to the field if it cannot be pushed.
+            #  To check which emoji should be used.
+            if show_cant_push_emoji:  # Adds can't push emoji to the field if it cannot be pushed.
                 embed.add_field(name=f"{cant_push_emoji} {index:03} {title} ", value=f"Tags: {tag}", inline=False)
                 options.append(discord.SelectOption(label=f"{title}", emoji=cant_push_emoji, value=str(index)))
-            elif show_already_pushed_emoji:
+                self.can_push.append(0)
+
+            elif show_already_pushed_emoji:  # Adds already pushed emoji to the field if post is already pushed.
                 embed.add_field(name=f"{already_pushed_emoji} {index:03} {title}", value=f"Tags: {tag}", inline=False)
                 options.append(discord.SelectOption(label=f"{title}", emoji=already_pushed_emoji, value=str(index)))
-            else:
+                self.can_push.append(1)
+
+            else:  # Adds can push emoji to the field if it can be pushed.
                 embed.add_field(name=f"{can_push_emoji} {index:03} {title}", value=f"Tags: {tag}", inline=False)
                 options.append(discord.SelectOption(label=f"{title}", emoji=can_push_emoji, value=str(index)))
+                self.can_push.append(2)
             # Optimise this, maybe the first if statement should be nested.
             if not self.len_items == index:
                 if not index % self.sep:
@@ -129,6 +147,9 @@ class PaginationDropdown(discord.ui.View):
         await self.interaction.edit_original_response(embed=self.embeds[self.current_page], view=self)
 
     async def disable_all_buttons(self):
+        """
+        Disables all buttons in the view.
+        """
         self.first_page_button.disabled = True
         self.back_page_button.disabled = True
         self.next_page_button.disabled = True
@@ -138,18 +159,30 @@ class PaginationDropdown(discord.ui.View):
         await self.update_message()
 
     def disable_back_buttons(self):
+        """
+        Disables back buttons.
+        """
         self.first_page_button.disabled = True
         self.back_page_button.disabled = True
 
     def disable_next_buttons(self):
+        """
+        Disables next buttons.
+        """
         self.next_page_button.disabled = True
         self.last_page_button.disabled = True
 
     def enable_back_buttons(self):
+        """
+        Enables back buttons.
+        """
         self.first_page_button.disabled = False
         self.back_page_button.disabled = False
 
     def enable_next_buttons(self):
+        """
+        Enables back buttons.
+        """
         self.last_page_button.disabled = False
         self.next_page_button.disabled = False
 
@@ -195,26 +228,50 @@ class PaginationDropdown(discord.ui.View):
 
 
 # Pushes selected items (index) to trello.
-async def push_to_trello(index, titles, tags, interaction, ids=None):
+async def push_to_trello(index, titles, tags, interaction, ids=None, can_push=None):
+    """
+    Pushes the posts to trello as cards and prints confirmation message.
+    :param index: Index of the post which is to be pushed.
+    :param titles: Title of the posts.
+    :param tags: Tags of the posts.
+    :param interaction: The discord interaction.
+    :param ids: IDs of the posts.
+    :return: Nothing.
+    """
+    warning_message = " <------- Discord Post ID\n###########Don't edit anything above this line###########\n"
     push_items = []
+    can_push_filtered = []
     for i in index:
         push_items.append({'index': i, 'name': titles[int(i) - 1], 'tags': tags[int(i) - 1], 'id': ids[int(i) - 1]})
-
+        can_push_filtered.append(can_push[int(i) - 1])
     my_requests = TrelloRequests()
     # Pushes cards to the list.
     # todo Backend and frontend tag filtering
     # todo Duplicates filtering. Only do this at the end
-    for item in push_items:
-        response = my_requests.post_labelled_cards(list_id=FRONTEND_lIST_ID, name=item['name'],
-                                                   description=f"[{item['id']}]", discord_labels=item['tags'])
-
-        # TO CHECK IF EVERYTHING IS WORKING
-        if response == 200:
+    for item, push in zip(push_items, can_push_filtered):
+        error_confirmation_message = f"Couldn't push: name={item['name']}, discord_labels={item['tags']} Reason:"
+        confirmation_message = f"Pushed: name={item['name']}, discord_labels={item['tags']}"
+        if push == 2:
+            response = my_requests.post_labelled_cards(list_id=FRONTEND_lIST_ID, name=item['name'],
+                                                       description=f"[{item['id']}]" + warning_message,
+                                                       discord_labels=item['tags'])
+            if response.status_code == 200:
+                card_id = response.json()['id']
+                response = my_requests.post_comment(card_id=card_id, comment=f"[{item['id']}] <------- Discord Post ID(Backup)")
+                if response.status_code == 200:
+                    await interaction.followup.send(f"{confirmation_message}", ephemeral=True)
+                else:
+                    await interaction.followup.send(f"{error_confirmation_message} Response code {response}", ephemeral=True)
+            else:
+                await interaction.followup.send(
+                    f"{error_confirmation_message} Response code {response}", ephemeral=True)
+        elif push == 0:
             await interaction.followup.send(
-                f"\nPushed: name={item['name']}, desc=Testing desc, discord_labels={item['tags']}\n",
-                ephemeral=True)
+                f"{error_confirmation_message} No Matching tags found.\n", ephemeral=True)
+        elif push == 1:
+            await interaction.followup.send(
+                f"{error_confirmation_message} Already pushed.\n", ephemeral=True)
         else:
-
             await interaction.followup.send(
-                f"\nCouldn't push: name={item['name']}, desc=Testing desc, discord_labels={item['tags']} \nReason: {response}\n",
-                ephemeral=True)
+                f"{error_confirmation_message} UNKNOWN ERROR\n", ephemeral=True)
+

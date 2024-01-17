@@ -3,7 +3,7 @@ from discord.ext import commands
 from Bot.settings import FRONTEND_lIST_ID, BACKEND_LIST_ID
 from Bot.cmds.pagination import Pagination
 from Bot.cmds.pagination_dropdown import PaginationDropdown, push_to_trello
-from Bot.cmds.trello_api import TrelloRequests
+from Bot.cmds.functions.trello_api import TrelloRequests
 class Threads(commands.Cog):
 
     # TODO Error handling when there is no posts.
@@ -23,8 +23,9 @@ class Threads(commands.Cog):
         await threads_embed.wait()
         index = threads_embed.dropdown_value
         await threads_embed.disable_all_buttons()
+        can_push = threads_embed.can_push
 
-        await push_to_trello(index=index, titles=titles, tags=tags, interaction=interaction, ids=ids)
+        await push_to_trello(index=index, titles=titles, tags=tags, interaction=interaction, ids=ids, can_push=can_push)
 
     #   TODO do error handling if the trello list is empty
     #   Command to return all cards in the list from trello.
