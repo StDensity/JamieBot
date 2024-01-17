@@ -2,6 +2,38 @@ import discord
 import copy
 from Bot.cmds.trello_api import TrelloRequests, get_matching_trello_labels
 from Bot.settings import FRONTEND_lIST_ID, FRONTEND_ID
+import re
+
+
+def get_cards_descriptions(list_details):
+    """
+    :param list_details: Receives the details about trello list
+    :return: Returns the cards descriptions as a list.
+    """
+    cards_descriptions = []
+    card_description = []
+    for item in list_details:
+        cards_descriptions.append(item['desc'])
+    pattern = re.compile(r'\[(.*?)\]')  # Create a patten to get string inside []
+    for description in cards_descriptions:
+        match = pattern.search(description)
+        if match:  # To check if it is returning
+            card_description.append(match.group(1))
+        else:
+            card_description.append(None)
+    return card_description
+
+
+def check_desc(description, post_id):
+    """
+    :param description: Takes in the cards descriptions as a list.
+    :param post_id: ID of the discord post.
+    :return: Boolean value, True if the post_id is found in the descriptions list.
+    """
+    if str(post_id) in str(description):
+        return True
+    else:
+        return False
 
 
 # Used to generate options for the dropdown view.
@@ -49,26 +81,34 @@ class PaginationDropdown(discord.ui.View):
         self.dropdown_value = self.posts.values
 
     async def create_embed(self):
-        red_emoji = "<:no:1196474019281653832>"
-        blue_emoji = "<:blue_yes:1196474006115713175>"
-        green_emoji = "<:green_yes:1196474012117778442>"
+        cant_push_emoji = "<:no:1196474019281653832>"
+        can_push_emoji = "<:blue_box:1196687124523647017>"
+        already_pushed_emoji = "<:green_yes:1196474012117778442>"
         embed = discord.Embed(colour=self.color)
         options = []
         trello_labels = TrelloRequests().get_labels(board_id=FRONTEND_ID)
-        for index, (title, tag, ids) in enumerate(zip(self.titles, self.tags, self.ids), start=1):
-            red_icon = False
+        list_details = TrelloRequests().get_cards(list_id=FRONTEND_lIST_ID)
+        cards_descriptions = get_cards_descriptions(
+            list_details=list_details)  # Card description is the id stored in trello cards.
+        for index, (title, tag, post_id) in enumerate(zip(self.titles, self.tags, self.ids), start=1):
+            show_cant_push_emoji = True
+            show_already_pushed_emoji = check_desc(description=cards_descriptions, post_id=post_id)
+            # TODO functionise show_can't_push_emoji
             for label in trello_labels:
                 for item in tag:
                     if label['name'].lower() == item.lower():
-                        red_icon = True
+                        show_cant_push_emoji = False
                         break
 
-            if not red_icon:  # Adds red emoji to the field if it cannot be pushed.
-                embed.add_field(name=f"{red_emoji} {index:03} {title} ", value=f"Tags: {tag}", inline=False)
-                options.append(discord.SelectOption(label=f"{title}", emoji=red_emoji, value=str(index)))
+            if show_cant_push_emoji:  # Adds red emoji to the field if it cannot be pushed.
+                embed.add_field(name=f"{cant_push_emoji} {index:03} {title} ", value=f"Tags: {tag}", inline=False)
+                options.append(discord.SelectOption(label=f"{title}", emoji=cant_push_emoji, value=str(index)))
+            elif show_already_pushed_emoji:
+                embed.add_field(name=f"{already_pushed_emoji} {index:03} {title}", value=f"Tags: {tag}", inline=False)
+                options.append(discord.SelectOption(label=f"{title}", emoji=already_pushed_emoji, value=str(index)))
             else:
-                embed.add_field(name=f"{green_emoji} {index:03} {title}", value=f"Tags: {tag}", inline=False)
-                options.append(discord.SelectOption(label=f"{title}", emoji=green_emoji, value=str(index)))
+                embed.add_field(name=f"{can_push_emoji} {index:03} {title}", value=f"Tags: {tag}", inline=False)
+                options.append(discord.SelectOption(label=f"{title}", emoji=can_push_emoji, value=str(index)))
             # Optimise this, maybe the first if statement should be nested.
             if not self.len_items == index:
                 if not index % self.sep:
