@@ -24,7 +24,7 @@ class Threads(commands.Cog):
         index = threads_embed.dropdown_value
         await threads_embed.disable_all_buttons()
 
-        await push_to_trello(index=index, titles=titles, tags=tags, interaction=interaction)
+        await push_to_trello(index=index, titles=titles, tags=tags, interaction=interaction, ids=ids)
 
     #   TODO do error handling if the trello list is empty
     #   Command to return all cards in the list from trello.

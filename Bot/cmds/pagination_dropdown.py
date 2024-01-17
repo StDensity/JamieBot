@@ -155,10 +155,10 @@ class PaginationDropdown(discord.ui.View):
 
 
 # Pushes selected items (index) to trello.
-async def push_to_trello(index, titles, tags, interaction):
+async def push_to_trello(index, titles, tags, interaction, ids=None):
     push_items = []
     for i in index:
-        push_items.append({'index': i, 'name': titles[int(i) - 1], 'tags': tags[int(i) - 1]})
+        push_items.append({'index': i, 'name': titles[int(i) - 1], 'tags': tags[int(i) - 1], 'id': ids[int(i) - 1]})
 
     my_requests = TrelloRequests()
     # Pushes cards to the list.
@@ -166,7 +166,7 @@ async def push_to_trello(index, titles, tags, interaction):
     # todo Duplicates filtering. Only do this at the end
     for item in push_items:
         response = my_requests.post_labelled_cards(list_id=FRONTEND_lIST_ID, name=item['name'],
-                                                   desc="Testing desc", discord_labels=item['tags'])
+                                                   description=f"[{item['id']}]", discord_labels=item['tags'])
 
         # TO CHECK IF EVERYTHING IS WORKING
         if response == 200:

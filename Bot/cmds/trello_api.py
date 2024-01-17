@@ -88,11 +88,11 @@ class TrelloRequests:
             return response.status_code
 
     # todo Handle error when the label is not found
-    def post_labelled_cards(self, list_id, name, desc, discord_labels, pos='top'):
+    def post_labelled_cards(self, list_id, name, description, discord_labels, pos='top'):
         label_ids = get_matching_trello_labels(discord_labels=discord_labels)
         if label_ids:  # Ignores posts without trello labels.
             url = f"{self.base_url}cards"
-            param = {'key': self.api_key, 'token': self.api_token, 'idList': list_id, 'name': name, 'desc': desc,
+            param = {'key': self.api_key, 'token': self.api_token, 'idList': list_id, 'name': name, 'desc': description,
                      'pos': pos, 'idLabels': label_ids}
 
             response = requests.post(url, params=param, timeout=10)
