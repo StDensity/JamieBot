@@ -18,7 +18,7 @@ def get_cards_descriptions(list_details):
     pattern = re.compile(r'\[(.*?)\]')  # Create a patten to get string inside []
     for description in cards_descriptions:
         match = pattern.search(description)
-        if match:  # To check if it is returning
+        if match:  # To check if it is returning or None
             card_description.append(match.group(1))
         else:
             card_description.append(None)
@@ -231,6 +231,7 @@ class PaginationDropdown(discord.ui.View):
 async def push_to_trello(index, titles, tags, interaction, ids=None, can_push=None):
     """
     Pushes the posts to trello as cards and prints confirmation message.
+    :param can_push: List of indexes which can be pushed. values= 0: No tag, 1: Already pushed, 2: Can push
     :param index: Index of the post which is to be pushed.
     :param titles: Title of the posts.
     :param tags: Tags of the posts.
