@@ -77,8 +77,9 @@ class PaginationDropdown(discord.ui.View):
         self.ids = ids
         self.sep = 10  # No. of items in each page.
         self.len_items = len(self.ids)
-        self.current_page = 0
+        self.current_page = 0   # Page no starts with 0, because it's easier to index this way.
         self.embeds = []
+
         self.color = discord.Color.dark_teal()
         self.total_page = 0
         self.options_list = []
@@ -94,6 +95,9 @@ class PaginationDropdown(discord.ui.View):
         self.posts = SelectPosts(self.options_list, self.current_page)
         self.add_item(self.posts)
         self.disable_back_buttons()
+        if self.total_page == 0:
+            self.disable_next_buttons()
+        self.embeds[0].set_footer(text=f"Page {self.current_page + 1} of {self.total_page + 1}")
         await self.interaction.response.send_message(embed=self.embeds[0], view=self)
         await self.wait()
         self.dropdown_value = self.posts.values
@@ -144,6 +148,7 @@ class PaginationDropdown(discord.ui.View):
             self.remove_item(self.posts)
             self.posts = SelectPosts(self.options_list, self.current_page)
             self.add_item(self.posts)
+            self.embeds[self.current_page].set_footer(text=f"Page {self.current_page + 1} of {self.total_page + 1}")
         await self.interaction.edit_original_response(embed=self.embeds[self.current_page], view=self)
 
     async def disable_all_buttons(self):
