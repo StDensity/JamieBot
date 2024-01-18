@@ -18,23 +18,28 @@ class Pagination(discord.ui.View):
         self.current_page = 0
         self.embeds = []
         self.color = discord.Color.dark_teal()
-        self.total_page = 0
+        self.total_page = 0     # Page no starts with 0, because it's easier to index this way.
 
 
-    async def send_embed(self):
+    async def send_message(self):
+        self.embeds[self.current_page].set_footer(text=f"Page {self.current_page + 1} of {self.total_page + 1}")
         if self.total_page == 0:
             await self.interaction.response.send_message(embed=self.embeds[0])  # No buttons if there is only one page to view.
         else:
             self.disable_back_buttons()
             await self.interaction.response.send_message(embed=self.embeds[0], view=self)
 
-    async def update_message(self):
+    async def update_embed(self):
+        self.embeds[self.current_page].set_footer(text=f"Page {self.current_page + 1} of {self.total_page + 1}")
         await self.interaction.edit_original_response(embed=self.embeds[self.current_page], view=self)
 
     async def create_embed(self, data):
         embed = discord.Embed(colour=self.color)
         for index, item in enumerate(data, start=1):
-            embed.add_field(name=f"{index:03} {item[self.field_name]}", value=f"Tag: {[label['name'] for label in item['labels']]}", inline=False)
+            tag = []
+            for tags in item['labels']:
+                tag.append(tags['name'])
+            embed.add_field(name=f"{index:03} {item[self.field_name]}", value=f"Tag: {', '.join(tag)}", inline=False)
             if not index == self.len_items:  # To check if we need more pages.
                 if not index % self.sep:
                     self.total_page += 1
@@ -42,7 +47,7 @@ class Pagination(discord.ui.View):
                     embed.clear_fields()
 
         self.embeds.append(embed)
-        await self.send_embed()
+        await self.send_message()
 
     async def paginate(self):
         await self.create_embed(self.data)
@@ -53,7 +58,7 @@ class Pagination(discord.ui.View):
         self.next_page_button.disabled = True
         self.last_page_button.disabled = True
         self.stop_page_button.disabled = True
-        await self.update_message()
+        await self.update_embed()
 
     def disable_back_buttons(self):
         self.first_page_button.disabled = True
@@ -77,7 +82,7 @@ class Pagination(discord.ui.View):
         self.current_page = 0
         self.enable_next_buttons()
         self.disable_back_buttons()
-        await self.update_message()
+        await self.update_embed()
 
     @discord.ui.button(label='<', style=discord.ButtonStyle.primary)
     async def back_page_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -86,7 +91,7 @@ class Pagination(discord.ui.View):
         self.enable_next_buttons()
         if self.current_page == 0:
             self.disable_back_buttons()
-        await self.update_message()
+        await self.update_embed()
 
     @discord.ui.button(label='>', style=discord.ButtonStyle.primary)
     async def next_page_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -95,7 +100,7 @@ class Pagination(discord.ui.View):
         self.enable_back_buttons()
         if self.current_page == self.total_page:
             self.disable_next_buttons()
-        await self.update_message()
+        await self.update_embed()
 
     @discord.ui.button(label='>|', style=discord.ButtonStyle.primary)
     async def last_page_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -103,7 +108,7 @@ class Pagination(discord.ui.View):
         self.current_page = self.total_page
         self.enable_back_buttons()
         self.disable_next_buttons()
-        await self.update_message()
+        await self.update_embed()
 
     @discord.ui.button(label="Stop", style=discord.ButtonStyle.primary)
     async def stop_page_button(self, interaction: discord.Interaction, button: discord.ui.Button):

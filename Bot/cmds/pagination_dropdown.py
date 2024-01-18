@@ -102,6 +102,15 @@ class PaginationDropdown(discord.ui.View):
         await self.wait()
         self.dropdown_value = self.posts.values
 
+    async def update_message(self):
+        if not self.posts.disabled:
+            self.remove_item(self.posts)
+            self.posts = SelectPosts(self.options_list, self.current_page)
+            self.add_item(self.posts)
+            self.embeds[self.current_page].set_footer(text=f"Page {self.current_page + 1} of {self.total_page + 1}")
+        await self.interaction.edit_original_response(embed=self.embeds[self.current_page], view=self)
+
+
     async def create_embed(self):
         cant_push_emoji = "<:no:1196474019281653832>"
         can_push_emoji = "<:grey_box:1196687143867781270>"
@@ -118,17 +127,17 @@ class PaginationDropdown(discord.ui.View):
 
             #  To check which emoji should be used.
             if show_cant_push_emoji:  # Adds can't push emoji to the field if it cannot be pushed.
-                embed.add_field(name=f"{cant_push_emoji} {index:03} {title} ", value=f"Tags: {tag}", inline=False)
+                embed.add_field(name=f"{cant_push_emoji} {index:03} {title} ", value=f"Tags: {', '.join(tag)}", inline=False)
                 options.append(discord.SelectOption(label=f"{title}", emoji=cant_push_emoji, value=str(index)))
                 self.can_push.append(0)
 
             elif show_already_pushed_emoji:  # Adds already pushed emoji to the field if post is already pushed.
-                embed.add_field(name=f"{already_pushed_emoji} {index:03} {title}", value=f"Tags: {tag}", inline=False)
+                embed.add_field(name=f"{already_pushed_emoji} {index:03} {title}", value=f"Tags: {', '.join(tag)}", inline=False)
                 options.append(discord.SelectOption(label=f"{title}", emoji=already_pushed_emoji, value=str(index)))
                 self.can_push.append(1)
 
             else:  # Adds can push emoji to the field if it can be pushed.
-                embed.add_field(name=f"{can_push_emoji} {index:03} {title}", value=f"Tags: {tag}", inline=False)
+                embed.add_field(name=f"{can_push_emoji} {index:03} {title}", value=f"Tags: {', '.join(tag)}", inline=False)
                 options.append(discord.SelectOption(label=f"{title}", emoji=can_push_emoji, value=str(index)))
                 self.can_push.append(2)
             # Optimise this, maybe the first if statement should be nested.
@@ -143,13 +152,7 @@ class PaginationDropdown(discord.ui.View):
         self.embeds.append(embed)
         await self.send_message()
 
-    async def update_message(self):
-        if not self.posts.disabled:
-            self.remove_item(self.posts)
-            self.posts = SelectPosts(self.options_list, self.current_page)
-            self.add_item(self.posts)
-            self.embeds[self.current_page].set_footer(text=f"Page {self.current_page + 1} of {self.total_page + 1}")
-        await self.interaction.edit_original_response(embed=self.embeds[self.current_page], view=self)
+
 
     async def disable_all_buttons(self):
         """
