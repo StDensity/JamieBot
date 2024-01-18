@@ -68,14 +68,14 @@ class SelectPosts(discord.ui.Select):
 
 # Performs the pagination
 class PaginationDropdown(discord.ui.View):
-    def __init__(self, interaction, titles, tags, ids):
+    def __init__(self, interaction, titles, tags, ids, sep):
         super().__init__()
         self.posts = None
         self.interaction = interaction
         self.titles = titles
         self.tags = tags
         self.ids = ids
-        self.sep = 10  # No. of items in each page.
+        self.sep = sep  # No. of items in each page.
         self.len_items = len(self.ids)
         self.current_page = 0  # Page no starts with 0, because it's easier to index this way.
         self.embeds = []
