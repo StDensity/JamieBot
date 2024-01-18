@@ -7,13 +7,13 @@ import copy
 class Pagination(discord.ui.View):
     current_page = 1
 
-    def __init__(self, interaction, data, field_name, field_value):
+    def __init__(self, interaction, data, field_name, field_value, sep):
         super().__init__()
         self.interaction = interaction
         self.data = data
         self.field_name = field_name
         self.field_value = field_value
-        self.sep = 10  # No. of items in each page.
+        self.sep = sep  # No. of items in each page.
         self.len_items = len(self.data)
         self.current_page = 0
         self.embeds = []

@@ -9,7 +9,9 @@ import traceback
 from typing import Optional
 from discord import app_commands
 from discord.app_commands import Choice
-
+from Bot.cmds.functions.embeds import CreateEmbeds
+import random
+from Bot.misc import EASTER_EGG_EMPTY_LIST_RESPONSE
 
 class Threads(commands.Cog):
     def __init__(self, bot):
@@ -63,17 +65,28 @@ class Threads(commands.Cog):
     @app_commands.command(name="trello_cards")
     @app_commands.choices(boards=[Choice(name='Frontend', value=FRONTEND_lIST_ID),
                                   Choice(name='Backend', value=BACKEND_LIST_ID)])
-    async def get_trello_cards(self, interaction: discord.Interaction, boards: Choice[str]):
-        try:
+    @app_commands.choices(number_of_items=[Choice(name='5', value=5),
+                                           Choice(name='10', value=10),
+                                           Choice(name='15', value=15),
+                                           Choice(name='20', value=20),
+                                           Choice(name='25', value=25)])
+    async def get_trello_cards(self, interaction: discord.Interaction, boards: Choice[str],
+                               number_of_items: Optional[Choice[int]] = None):
+        # try:
+            number_of_items = number_of_items or Choice(name='10 Default', value=10)  # If the number of items is empty then it will assign 10 to it.
             my_requests = TrelloRequests()
             cards = my_requests.get_cards(boards.value)  # boards.value returns the list id of the board
-            new_embed = Pagination(interaction=interaction, data=cards, field_name='name', field_value='id')
+            if len(cards) == 0:
+                error_embed = CreateEmbeds().create_green_embed(title="Empty List", field_name=random.choice(EASTER_EGG_EMPTY_LIST_RESPONSE))
+                await interaction.response.send_message(embed=error_embed)
+                return
+            new_embed = Pagination(interaction=interaction, data=cards, field_name='name', field_value='id', sep=number_of_items.value)
             await new_embed.paginate()
             await new_embed.wait()
             await new_embed.disable_all_buttons()
-        except Exception as e:
-            await Audit().send_log(interaction=interaction, title="Push Threads", exception=e,
-                                   trace=traceback.format_exc())
+        # except Exception as e:
+        #     await Audit().send_log(interaction=interaction, title="Push Threads", exception=e,
+        #                            trace=traceback.format_exc())
 
 
 async def setup(bot):
