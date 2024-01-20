@@ -1,0 +1,31 @@
+
+
+EASTER_EGG_EMPTY_LIST_RESPONSE = [
+    "All tasks completed! Time to do the happy dance!",
+    "Task list empty. Enjoy some free time!",
+    "Mission accomplished! Time for a victory dance!",
+    "Did you hire a personal assistant, or are you just that good?",
+    "No more tasks! You're officially the productivity ninja.",
+    "Task list annihilated! Your to-do list fears you now.",
+    "Mission accomplished, soldier! Your to-do list is clear.",
+    "Must be nice to be in the 'I have no tasks' club.",
+    "Task list neutralized. Excellent work, commander!",
+    "All tasks completed. You're now a to-do list general!",
+    "Zero tasks left. You've secured victory on the productivity battlefield.",
+    "Did you discover a magical productivity potion or just become a wizard?",
+    "No tasks? You're the unicorn of productivity.",
+    "Match point! You've cleared the task list and secured victory.",
+    "No more tasks to spike! You're the MVP of productivity.",
+    "Ultimate ability activated! Task list wiped out. Victory!",
+    "Someone's been practicing the ancient art of task-list vanishing.",
+    "Empty task list? Are you even human?",
+    "Sova would be proud! You've revealed all the tasks and cleared the list.",
+    "Task list supremacy achieved. You're the true Radiant rank of productivity.",
+    "Empty task list? Either you're a genius or you're up to something.",
+    "Zero tasks left? Quick, someone check for a glitch in the matrix!",
+    "Empty task list – the calm after the productive storm.",
+    "Zero tasks left. Relax and recharge.",
+    "You've conquered the to-do list. Take a moment to savor the accomplishment.",
+    "Task list cleared. Now, what's next on your agenda?",
+    "Well done! Your task list is officially empty."
+]
