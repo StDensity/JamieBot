@@ -236,33 +236,31 @@ class PaginationDropdown(discord.ui.View):
 
 
 # Pushes selected items (index) to trello.
-async def push_to_trello(index, titles, tags, interaction, ids=None, can_push=None):
+async def push_posts_to_trello(selected_indexes, post_titles, post_tags, interaction, post_ids=None, can_push_status=None):
     """
     Pushes the posts to trello as cards and prints confirmation message.
-    :param can_push: List of indexes which can be pushed. values= 0: No tag, 1: Already pushed, 2: Can push
-    :param index: Index of the post which is to be pushed.
-    :param titles: Title of the posts.
-    :param tags: Tags of the posts.
+    :param can_push_status: List of indexes which can be pushed. values= 0: No tag, 1: Already pushed, 2: Can push
+    :param selected_indexes: Index of the post which is to be pushed.
+    :param post_titles: Title of the posts.
+    :param post_tags: Tags of the posts.
     :param interaction: The discord interaction.
-    :param ids: IDs of the posts.
+    :param post_ids: IDs of the posts.
     :return: Nothing.
     """
-    warning_message = " <------- Discord Post ID\n###########Don't edit anything above this line###########\n"
-    push_items = []
-    can_push_filtered = []
-    for i in index:
-        push_items.append({'index': i, 'name': titles[int(i) - 1], 'tags': tags[int(i) - 1], 'id': ids[int(i) - 1]})
-        can_push_filtered.append(can_push[int(i) - 1])
+    do_not_delete_message = " <------- Discord Post ID\n###########Don't edit anything above this line###########\n"
+    posts_to_push = []
+    filtered_push_codes = []
+    for i in selected_indexes:
+        posts_to_push.append({'index': i, 'name': post_titles[int(i) - 1], 'tags': post_tags[int(i) - 1], 'id': post_ids[int(i) - 1]})
+        filtered_push_codes.append(can_push_status[int(i) - 1])
     my_requests = TrelloRequests()
     # Pushes cards to the list.
-    # todo Backend and frontend tag filtering
-    # todo Duplicates filtering. Only do this at the end
-    for item, push in zip(push_items, can_push_filtered):
+    for item, push in zip(posts_to_push, filtered_push_codes):
         error_confirmation_message = f"Couldn't push: name={item['name']}, discord_labels={item['tags']} Reason:"
         confirmation_message = f"Pushed: name={item['name']}, discord_labels={item['tags']}"
         if push == 2:
             response = my_requests.post_labelled_cards(list_id=FRONTEND_lIST_ID, name=item['name'],
-                                                       description=f"[{item['id']}]" + warning_message,
+                                                       description=f"[{item['id']}]" + do_not_delete_message,
                                                        discord_labels=item['tags'])
             if response.status_code == 200:
                 card_id = response.json()['id']

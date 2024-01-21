@@ -1,16 +1,21 @@
+# External libraries
 import discord
 from discord.ext import commands
-from Bot.settings import FRONTEND_lIST_ID, BACKEND_LIST_ID
-from Bot.cmds.pagination import Pagination
-from Bot.cmds.pagination_dropdown import PaginationDropdown, push_to_trello
-from Bot.cmds.functions.trello_api import TrelloRequests
-from Bot.cmds.functions.audit_log import Audit
-import traceback
-from typing import Optional
 from discord import app_commands
 from discord.app_commands import Choice
-from Bot.cmds.functions.embeds import CreateEmbeds
 import random
+
+# Standard libraries
+import traceback
+from typing import Optional
+
+# Internal modules
+from Bot.settings import FRONTEND_lIST_ID, BACKEND_LIST_ID
+from Bot.cmds.pagination import Pagination
+from Bot.cmds.pagination_dropdown import PaginationDropdown, push_posts_to_trello
+from Bot.cmds.functions.trello_api import TrelloRequests
+from Bot.cmds.functions.audit_log import Audit
+from Bot.cmds.functions.embeds import CreateEmbeds
 from Bot.misc import EASTER_EGG_EMPTY_LIST_RESPONSE
 
 
@@ -33,7 +38,8 @@ class Threads(commands.Cog):
                                            Choice(name='25', value=25)])
     @app_commands.rename(channel="channel", number_of_posts="posts")
     @app_commands.describe(channel="Select the channel to get threads.",
-                           number_of_posts="Select the number of posts to fetch.")
+                           number_of_posts="Select the number of posts to fetch.",
+                           number_of_items="Number of items per page.")
     async def push_threads(self, interaction: discord.Interaction,
                            channel: discord.ForumChannel,
                            number_of_posts: Choice[int],
@@ -55,12 +61,13 @@ class Threads(commands.Cog):
             await threads_embed.wait()
             index = threads_embed.dropdown_value
             await threads_embed.disable_all_buttons()
-            can_push = threads_embed.can_push
+            can_push_item_code = threads_embed.can_push
 
-            await push_to_trello(index=index, titles=titles, tags=tags, interaction=interaction, ids=ids,
-                                 can_push=can_push)
+            await push_posts_to_trello(selected_indexes=index, post_titles=titles, post_tags=tags,
+                                       interaction=interaction, post_ids=ids,
+                                       can_push_status=can_push_item_code)
         except Exception as e:
-            await Audit().send_log(interaction=interaction, title="Push Threads", exception=e,
+            await Audit().send_log(interaction=interaction, title="In Push Threads", exception=e,
                                    trace=traceback.format_exc())
 
     #   TODO do error handling if the trello list is empty
@@ -75,24 +82,25 @@ class Threads(commands.Cog):
                                            Choice(name='25', value=25)])
     async def get_trello_cards(self, interaction: discord.Interaction, boards: Choice[str],
                                number_of_items: Optional[Choice[int]] = None):
-        # try:
-        number_of_items = number_of_items or Choice(name='10 Default',
-                                                    value=10)  # If the number of items is empty then it will assign 10 to it.
-        my_requests = TrelloRequests()
-        cards = my_requests.get_cards(boards.value)  # boards.value returns the list id of the board
-        if len(cards) == 0:
-            error_embed = CreateEmbeds().create_green_embed(title="Empty List",
-                                                            field_name=random.choice(EASTER_EGG_EMPTY_LIST_RESPONSE))
-            await interaction.response.send_message(embed=error_embed)
-            return
-        new_embed = Pagination(interaction=interaction, data=cards, field_name='name', field_value='id',
-                               sep=number_of_items.value)
-        await new_embed.paginate()
-        await new_embed.wait()
-        await new_embed.disable_all_buttons()
-    # except Exception as e:
-    #     await Audit().send_log(interaction=interaction, title="Push Threads", exception=e,
-    #                            trace=traceback.format_exc())
+        try:
+            number_of_items = number_of_items or Choice(name='10 Default',
+                                                        value=10)  # If the number of items is empty then it will assign 10 to it.
+            my_requests = TrelloRequests()
+            cards = my_requests.get_cards(boards.value)  # boards.value returns the list id of the board
+            if len(cards) == 0:
+                error_embed = CreateEmbeds().create_green_embed(title="Empty List",
+                                                                field_name=random.choice(
+                                                                    EASTER_EGG_EMPTY_LIST_RESPONSE))
+                await interaction.response.send_message(embed=error_embed)
+                return
+            new_embed = Pagination(interaction=interaction, data=cards, field_name='name', field_value='id',
+                                   sep=number_of_items.value)
+            await new_embed.paginate()
+            await new_embed.wait()
+            await new_embed.disable_all_buttons()
+        except Exception as e:
+            await Audit().send_log(interaction=interaction, title="In Get Trello Cards", exception=e,
+                                   trace=traceback.format_exc())
 
 
 async def setup(bot):

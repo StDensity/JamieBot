@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 from settings import DISCORD_API_SECRET
 
+
+
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
@@ -16,7 +18,7 @@ async def on_ready():
     await bot.load_extension('cmds.thread')
 
     tree_sync = await bot.tree.sync()
-    print(tree_sync, 'synced')
+    print('synced', tree_sync)
 
 
 if __name__ == '__main__':
