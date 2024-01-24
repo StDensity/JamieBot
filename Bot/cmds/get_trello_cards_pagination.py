@@ -144,8 +144,7 @@ class Pagination(discord.ui.View):
 
 
 def clean_description(input_text):
-    return re.sub(r'\[[^\]]*\]', '', input_text)
-
+    return re.sub(r'\[[^\]]*\]', '', input_text)    # Removes things in []
 
 
 async def card_detail_embed(selected_index, cards, interaction):
@@ -154,7 +153,6 @@ async def card_detail_embed(selected_index, cards, interaction):
                               url=cards[int(index) - 1]['url'])
         tags = []
         cleaned_description = clean_description(cards[int(index) - 1]['desc'])
-        print(f"Clearned desc, {cleaned_description}" )
         for tag_list in cards[int(index) - 1]['labels']:
             tags.append(tag_list['name'])
         embed.add_field(name="Tags", value=','.join(tags))

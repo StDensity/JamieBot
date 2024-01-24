@@ -100,10 +100,6 @@ class Threads(commands.Cog):
             await new_embed.wait()
             index = new_embed.dropdown_value
             await new_embed.disable_all_buttons()
-
-            print(index)
-            for i in index:
-                print(cards[int(i)-1]['name'])
             await card_detail_embed(selected_index=index, cards=cards, interaction=interaction)
         except Exception as e:
             await Audit().send_log(interaction=interaction, title="In Get Trello Cards", exception=e,
