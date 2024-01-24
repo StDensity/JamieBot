@@ -31,23 +31,24 @@ class Threads(commands.Cog):
                                            Choice(name='Latest 50', value=-50),
                                            Choice(name='Latest 100', value=-100),
                                            Choice(name='Latest 150', value=-150)])
-    @app_commands.choices(number_of_items=[Choice(name='5', value=5),
-                                           Choice(name='10', value=10),
-                                           Choice(name='15', value=15),
-                                           Choice(name='20', value=20),
-                                           Choice(name='25', value=25)])
+    @app_commands.choices(number_of_items_per_page=[Choice(name='5', value=5),
+                                                    Choice(name='10', value=10),
+                                                    Choice(name='15', value=15),
+                                                    Choice(name='20', value=20),
+                                                    Choice(name='25', value=25)])
     @app_commands.rename(channel="channel", number_of_posts="posts")
     @app_commands.describe(channel="Select the channel to get threads.",
                            number_of_posts="Select the number of posts to fetch.",
-                           number_of_items="Number of items per page.")
+                           number_of_items_per_page="Number of items per page.")
     async def push_threads(self, interaction: discord.Interaction,
                            channel: discord.ForumChannel,
                            number_of_posts: Choice[int],
-                           number_of_items: Optional[Choice[int]] = None):
+                           number_of_items_per_page: Optional[Choice[int]] = None):
         try:
-            number_of_items = number_of_items or Choice(name='10 Default',
+            number_of_items_per_page = number_of_items_per_page or Choice(name='10 Default',
                                                         value=10)  # If the number of items is empty then it will assign 10 to it.
             threads = channel.threads
+            threads.reverse()
             tags = []
             titles = []
             ids = []
@@ -56,7 +57,7 @@ class Threads(commands.Cog):
                 titles.append(thread.name.title())
                 ids.append(thread.id)
             threads_embed = PaginationDropdown(interaction=interaction, titles=titles, tags=tags, ids=ids,
-                                               sep=number_of_items.value)
+                                               sep=number_of_items_per_page.value)
             await threads_embed.paginate()
             await threads_embed.wait()
             index = threads_embed.dropdown_value

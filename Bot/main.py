@@ -2,8 +2,6 @@ import discord
 from discord.ext import commands
 from settings import DISCORD_API_SECRET
 
-
-
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
