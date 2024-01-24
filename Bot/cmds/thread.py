@@ -11,8 +11,8 @@ from typing import Optional
 
 # Internal modules
 from Bot.settings import FRONTEND_lIST_ID, BACKEND_LIST_ID
-from Bot.cmds.pagination import Pagination
-from Bot.cmds.pagination_dropdown import PaginationDropdown, push_posts_to_trello
+from Bot.cmds.get_trello_cards_pagination import Pagination, card_detail_embed
+from Bot.cmds.push_threads_pagination import PaginationDropdown, push_posts_to_trello
 from Bot.cmds.functions.trello_api import TrelloRequests
 from Bot.cmds.functions.audit_log import Audit
 from Bot.cmds.functions.embeds import CreateEmbeds
@@ -23,9 +23,9 @@ class Threads(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # TODO Error handling when there is no posts.
+    # TODO Error handling when there is no dropdown_elements.
     @app_commands.command(name='push_threads')
-    @app_commands.choices(number_of_posts=[Choice(name='All', value=10000),  # Huge value to fetch all posts.
+    @app_commands.choices(number_of_posts=[Choice(name='All', value=10000),  # Huge value to fetch all dropdown_elements.
                                            Choice(name='Latest 10', value=10),
                                            Choice(name='Latest 30', value=20),
                                            Choice(name='Latest 50', value=50),
@@ -36,9 +36,9 @@ class Threads(commands.Cog):
                                                     Choice(name='15', value=15),
                                                     Choice(name='20', value=20),
                                                     Choice(name='25', value=25)])
-    @app_commands.rename(channel="channel", number_of_posts="posts")
+    @app_commands.rename(channel="channel", number_of_posts="dropdown_elements")
     @app_commands.describe(channel="Select the channel to get threads.",
-                           number_of_posts="Select the number of posts to fetch.",
+                           number_of_posts="Select the number of dropdown_elements to fetch.",
                            number_of_items_per_page="Number of items per page.")
     async def push_threads(self, interaction: discord.Interaction,
                            channel: discord.ForumChannel,
@@ -98,7 +98,13 @@ class Threads(commands.Cog):
                                    sep=number_of_items.value)
             await new_embed.paginate()
             await new_embed.wait()
+            index = new_embed.dropdown_value
             await new_embed.disable_all_buttons()
+
+            print(index)
+            for i in index:
+                print(cards[int(i)-1]['name'])
+            await card_detail_embed(selected_index=index, cards=cards, interaction=interaction)
         except Exception as e:
             await Audit().send_log(interaction=interaction, title="In Get Trello Cards", exception=e,
                                    trace=traceback.format_exc())

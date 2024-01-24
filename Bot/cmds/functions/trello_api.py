@@ -96,7 +96,7 @@ class TrelloRequests:
     # todo Handle error when the label is not found
     def post_labelled_cards(self, list_id, name, description, discord_labels, pos='top'):
         label_ids = get_matching_trello_labels(discord_labels=discord_labels)
-        if label_ids:  # Ignores posts without trello labels.
+        if label_ids:  # Ignores dropdown_elements without trello labels.
             url = f"{self.base_url}cards"
             param = {'key': self.api_key, 'token': self.api_token, 'idList': list_id, 'name': name, 'desc': description,
                      'pos': pos, 'idLabels': label_ids}
@@ -119,7 +119,7 @@ class TrelloRequests:
 
 def get_matching_trello_labels(discord_labels):
     """
-    :param discord_labels: Labels of the corresponding posts.
+    :param discord_labels: Labels of the corresponding dropdown_elements.
     :return: list of corresponding trello label ids.
     """
     label_ids = []

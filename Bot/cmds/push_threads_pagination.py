@@ -55,7 +55,7 @@ def check_labels(trello_labels, tag):
 # Used to generate options for the dropdown view.
 class SelectPosts(discord.ui.Select):
     def __init__(self, options_list, current_page):
-        super().__init__(options=options_list[current_page], placeholder="Which posts do you want to push.",
+        super().__init__(options=options_list[current_page], placeholder="Which dropdown_elements do you want to push.",
                          max_values=len(options_list[current_page]))
 
     async def callback(self, interaction: discord.Interaction):
@@ -70,7 +70,7 @@ class SelectPosts(discord.ui.Select):
 class PaginationDropdown(discord.ui.View):
     def __init__(self, interaction, titles, tags, ids, sep):
         super().__init__()
-        self.posts = None
+        self.dropdown_elements = None
         self.interaction = interaction
         self.titles = titles
         self.tags = tags
@@ -92,21 +92,22 @@ class PaginationDropdown(discord.ui.View):
         await self.create_embed()
 
     async def send_message(self):
-        self.posts = SelectPosts(self.options_list, self.current_page)
-        self.add_item(self.posts)
+        self.dropdown_elements = SelectPosts(self.options_list, self.current_page)
+        self.add_item(self.dropdown_elements)
         self.disable_back_buttons()
         if self.total_page == 0:
             self.disable_next_buttons()
         self.embeds[0].set_footer(text=f"Page {self.current_page + 1} of {self.total_page + 1}")
         await self.interaction.response.send_message(embed=self.embeds[0], view=self)
         await self.wait()
-        self.dropdown_value = self.posts.values
+        self.dropdown_value = self.dropdown_elements.values
+        print(self.dropdown_elements.values)
 
     async def update_message(self):
-        if not self.posts.disabled:
-            self.remove_item(self.posts)
-            self.posts = SelectPosts(self.options_list, self.current_page)
-            self.add_item(self.posts)
+        if not self.dropdown_elements.disabled:
+            self.remove_item(self.dropdown_elements)
+            self.dropdown_elements = SelectPosts(self.options_list, self.current_page)
+            self.add_item(self.dropdown_elements)
             self.embeds[self.current_page].set_footer(text=f"Page {self.current_page + 1} of {self.total_page + 1}")
         await self.interaction.edit_original_response(embed=self.embeds[self.current_page], view=self)
 
@@ -118,8 +119,7 @@ class PaginationDropdown(discord.ui.View):
         options = []
         trello_labels = TrelloRequests().get_labels(board_id=FRONTEND_ID)
         list_details = TrelloRequests().get_cards(list_id=FRONTEND_lIST_ID)
-        cards_descriptions = get_cards_descriptions(
-            list_details=list_details)  # Card description is the id stored in trello cards.
+        cards_descriptions = get_cards_descriptions(list_details=list_details)  # Card description is the id stored in trello cards.
         for index, (title, tag, post_id) in enumerate(zip(self.titles, self.tags, self.ids), start=1):
             show_cant_push_emoji = check_labels(trello_labels=trello_labels, tag=tag)
             show_already_pushed_emoji = check_desc(description=cards_descriptions, post_id=post_id)
@@ -163,7 +163,7 @@ class PaginationDropdown(discord.ui.View):
         self.next_page_button.disabled = True
         self.last_page_button.disabled = True
         self.stop_page_button.disabled = True
-        self.posts.disabled = True
+        self.dropdown_elements.disabled = True
         await self.update_message()
 
     def disable_back_buttons(self):
@@ -238,16 +238,16 @@ class PaginationDropdown(discord.ui.View):
 # Pushes selected items (index) to trello.
 async def push_posts_to_trello(selected_indexes, post_titles, post_tags, interaction, post_ids=None, can_push_status=None):
     """
-    Pushes the posts to trello as cards and prints confirmation message.
+    Pushes the dropdown_elements to trello as cards and prints confirmation message.
     :param can_push_status: List of indexes which can be pushed. values= 0: No tag, 1: Already pushed, 2: Can push
     :param selected_indexes: Index of the post which is to be pushed.
-    :param post_titles: Title of the posts.
-    :param post_tags: Tags of the posts.
+    :param post_titles: Title of the dropdown_elements.
+    :param post_tags: Tags of the dropdown_elements.
     :param interaction: The discord interaction.
-    :param post_ids: IDs of the posts.
+    :param post_ids: IDs of the dropdown_elements.
     :return: Nothing.
     """
-    do_not_delete_message = " <------- Discord Post ID\n###########Don't edit anything above this line###########\n"
+    do_not_delete_message = "[<------- Discord Post ID\n###########Don't edit anything above this line###########]\n"
     posts_to_push = []
     filtered_push_codes = []
     for i in selected_indexes:

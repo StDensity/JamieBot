@@ -9,6 +9,7 @@ class Audit:
         self.audit_channel_id = AUDIT_CHANNEL_ID
 
     async def send_log(self, title, interaction, exception, trace=None):
+        print(trace)
         trace = ""    # Jame asked me to remove the error details
         channel = interaction.client.get_channel(int(AUDIT_CHANNEL_ID))
         if len(trace) > 900:

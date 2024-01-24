@@ -1,11 +1,22 @@
 import discord
 import copy
+import re
 
 
 # todo Clean the code, Maybe just get every param in the init function.
 
+class SelectPosts(discord.ui.Select):
+    def __init__(self, options_list, current_page):
+        super().__init__(options=options_list[current_page], placeholder="Select the cards for details.",
+                         max_values=len(options_list[current_page]))
+
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.send_message(self.values)
+        self.view.value = self.values
+        self.view.stop()
+
+
 class Pagination(discord.ui.View):
-    current_page = 1
 
     def __init__(self, interaction, data, field_name, field_value, sep):
         super().__init__()
@@ -18,35 +29,50 @@ class Pagination(discord.ui.View):
         self.current_page = 0
         self.embeds = []
         self.color = discord.Color.dark_teal()
-        self.total_page = 0     # Page no starts with 0, because it's easier to index this way.
-
+        self.total_page = 0  # Page no starts with 0, because it's easier to index this way.
+        self.options_list = []
+        self.dropdown_elements = None
+        self.dropdown_value = None
 
     async def send_message(self):
-        self.embeds[self.current_page].set_footer(text=f"Page {self.current_page + 1} of {self.total_page + 1}")
+
+        self.dropdown_elements = SelectPosts(self.options_list, self.current_page)
+        self.add_item(self.dropdown_elements)
+        self.disable_back_buttons()
         if self.total_page == 0:
-            await self.interaction.response.send_message(embed=self.embeds[0])  # No buttons if there is only one page to view.
-        else:
-            self.disable_back_buttons()
-            await self.interaction.response.send_message(embed=self.embeds[0], view=self)
+            self.disable_next_buttons()
+        self.embeds[self.current_page].set_footer(
+            text=f"Page {self.current_page + 1} of {self.total_page + 1}")  # Adds page number
+        await self.interaction.response.send_message(embed=self.embeds[0], view=self)
+        await self.wait()
+        self.dropdown_value = self.dropdown_elements.values
+        print(self.dropdown_elements.values)
 
     async def update_embed(self):
+        self.remove_item(self.dropdown_elements)
+        self.dropdown_elements = SelectPosts(self.options_list, self.current_page)
+        self.add_item(self.dropdown_elements)
         self.embeds[self.current_page].set_footer(text=f"Page {self.current_page + 1} of {self.total_page + 1}")
         await self.interaction.edit_original_response(embed=self.embeds[self.current_page], view=self)
 
     async def create_embed(self, data):
+        options = []
         embed = discord.Embed(colour=self.color)
         for index, item in enumerate(data, start=1):
             tag = []
             for tags in item['labels']:
                 tag.append(tags['name'])
             embed.add_field(name=f"{index:03} {item[self.field_name]}", value=f"Tag: {', '.join(tag)}", inline=False)
+            options.append(discord.SelectOption(label=f"{item[self.field_name]}", value=index))
             if not index == self.len_items:  # To check if we need more pages.
                 if not index % self.sep:
                     self.total_page += 1
                     self.embeds.append(copy.deepcopy(embed))
+                    self.options_list.append(options)
                     embed.clear_fields()
-
+                    options = []
         self.embeds.append(embed)
+        self.options_list.append(options)
         await self.send_message()
 
     async def paginate(self):
@@ -115,3 +141,23 @@ class Pagination(discord.ui.View):
         await interaction.response.defer()
         await self.disable_all_buttons()
         self.stop()
+
+
+def clean_description(input_text):
+    return re.sub(r'\[[^\]]*\]', '', input_text)
+
+
+
+async def card_detail_embed(selected_index, cards, interaction):
+    for index in selected_index:
+        embed = discord.Embed(color=discord.Color.blue(), title=cards[int(index) - 1]['name'],
+                              url=cards[int(index) - 1]['url'])
+        tags = []
+        cleaned_description = clean_description(cards[int(index) - 1]['desc'])
+        print(f"Clearned desc, {cleaned_description}" )
+        for tag_list in cards[int(index) - 1]['labels']:
+            tags.append(tag_list['name'])
+        embed.add_field(name="Tags", value=','.join(tags))
+        if cleaned_description.strip():
+            embed.add_field(name="Description", value=cleaned_description)
+        await interaction.followup.send(embed=embed)
