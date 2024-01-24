@@ -143,11 +143,18 @@ class Pagination(discord.ui.View):
         self.stop()
 
 
-def clean_description(input_text):
+def clean_description(input_text: str) -> str:
     return re.sub(r'\[[^\]]*\]', '', input_text)    # Removes things in []
 
 
-async def card_detail_embed(selected_index, cards, interaction):
+async def card_detail_embed(selected_index: list, cards, interaction):
+    """
+    Used to send the details of cards which is selected by the dropdown in trello_cards command.
+    :param selected_index: The index selected by the user to give the details of the cards.
+    :param cards: The card details.
+    :param interaction: Discord interaction
+    :return: Nothing
+    """
     for index in selected_index:
         embed = discord.Embed(color=discord.Color.blue(), title=cards[int(index) - 1]['name'],
                               url=cards[int(index) - 1]['url'])
