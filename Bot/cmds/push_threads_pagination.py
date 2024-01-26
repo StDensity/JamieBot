@@ -3,7 +3,7 @@ import copy
 from Bot.cmds.functions.trello_api import TrelloRequests
 from Bot.settings import FRONTEND_lIST_ID, FRONTEND_ID
 import re
-
+from Bot.cmds.functions.utils import is_message_author, send_not_author_message
 
 def get_cards_descriptions(list_details):
     """
@@ -60,12 +60,12 @@ class SelectPosts(discord.ui.Select):
         self.interaction_author_id = interaction_author_id
 
     async def callback(self, interaction: discord.Interaction):
-        if interaction.user.id == self.interaction_author_id:  # To check if the command auther is interacting with the message.
+        if is_message_author(self.interaction_author_id, interaction.user.id):  # To check if the command auther is interacting with the message.
             await interaction.response.send_message(self.values)
             self.view.value = self.values
             self.view.stop()
         else:
-            await interaction.response.send_message("You can't interact with this message!", ephemeral=True)
+            await send_not_author_message(interaction=interaction)
 
 
 # TODO disable buttons when there is only one page
@@ -106,7 +106,6 @@ class PaginationDropdown(discord.ui.View):
         await self.interaction.response.send_message(embed=self.embeds[0], view=self)
         await self.wait()
         self.dropdown_value = self.dropdown_elements.values
-        print(self.dropdown_elements.values)
 
     async def update_message(self):
         if not self.dropdown_elements.disabled:
@@ -201,43 +200,58 @@ class PaginationDropdown(discord.ui.View):
 
     @discord.ui.button(label='|<', style=discord.ButtonStyle.primary)
     async def first_page_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-        self.current_page = 0
-        self.disable_back_buttons()
-        self.enable_next_buttons()
-        await self.update_message()
+        if is_message_author(self.interaction_author_id, interaction.user.id):
+            await interaction.response.defer()
+            self.current_page = 0
+            self.disable_back_buttons()
+            self.enable_next_buttons()
+            await self.update_message()
+        else:
+            await send_not_author_message(interaction=interaction)
 
     @discord.ui.button(label='<', style=discord.ButtonStyle.primary)
     async def back_page_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-        self.current_page -= 1
-        self.enable_next_buttons()
-        if self.current_page == 0:
-            self.disable_back_buttons()
-        await self.update_message()
+        if is_message_author(self.interaction_author_id, interaction.user.id):
+            await interaction.response.defer()
+            self.current_page -= 1
+            self.enable_next_buttons()
+            if self.current_page == 0:
+                self.disable_back_buttons()
+            await self.update_message()
+        else:
+            await send_not_author_message(interaction=interaction)
 
     @discord.ui.button(label='>', style=discord.ButtonStyle.primary)
     async def next_page_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-        self.current_page += 1
-        self.enable_back_buttons()
-        if self.current_page == self.total_page:
-            self.disable_next_buttons()
-        await self.update_message()
+        if is_message_author(self.interaction_author_id, interaction.user.id):
+            await interaction.response.defer()
+            self.current_page += 1
+            self.enable_back_buttons()
+            if self.current_page == self.total_page:
+                self.disable_next_buttons()
+            await self.update_message()
+        else:
+            await send_not_author_message(interaction=interaction)
 
     @discord.ui.button(label='>|', style=discord.ButtonStyle.primary)
     async def last_page_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-        self.current_page = self.total_page
-        self.enable_back_buttons()
-        self.disable_next_buttons()
-        await self.update_message()
+        if is_message_author(self.interaction_author_id, interaction.user.id):
+            await interaction.response.defer()
+            self.current_page = self.total_page
+            self.enable_back_buttons()
+            self.disable_next_buttons()
+            await self.update_message()
+        else:
+            await send_not_author_message(interaction=interaction)
 
     @discord.ui.button(label="Stop", style=discord.ButtonStyle.primary)
     async def stop_page_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-        await self.disable_all_buttons()
-        self.stop()
+        if is_message_author(self.interaction_author_id, interaction.user.id):
+            await interaction.response.defer()
+            await self.disable_all_buttons()
+            self.stop()
+        else:
+            await send_not_author_message(interaction=interaction)
 
 
 # Pushes selected items (index) to trello.

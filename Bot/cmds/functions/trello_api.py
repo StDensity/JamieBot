@@ -34,12 +34,7 @@ class TrelloRequests:
 
         if response.status_code == 200:
             data = response.json()
-            lists = []
-
-            for items in data:
-                lists.append({'name': items['name'], 'id': items['id']})
-
-            return lists
+            return data
         else:
             return response.status_code
 

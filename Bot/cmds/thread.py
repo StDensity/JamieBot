@@ -10,7 +10,7 @@ import traceback
 from typing import Optional
 
 # Internal modules
-from Bot.settings import FRONTEND_lIST_ID, BACKEND_LIST_ID
+from Bot.settings import FRONTEND_ID, BACKEND_ID
 from Bot.cmds.get_trello_cards_pagination import Pagination, card_detail_embed
 from Bot.cmds.push_threads_pagination import PaginationDropdown, push_posts_to_trello
 from Bot.cmds.functions.trello_api import TrelloRequests
@@ -18,6 +18,13 @@ from Bot.cmds.functions.audit_log import Audit
 from Bot.cmds.functions.embeds import CreateEmbeds
 from Bot.misc import EASTER_EGG_EMPTY_LIST_RESPONSE
 
+
+def get_list_id_as_choice(board_id):
+    list_datas = TrelloRequests().get_lists(board_id)
+    options = []
+    for items in list_datas:
+        options.append(Choice(name=items['name'], value=items['id']))
+    return options
 
 class Threads(commands.Cog):
     def __init__(self, bot):
@@ -71,23 +78,22 @@ class Threads(commands.Cog):
             await Audit().send_log(interaction=interaction, title="In Push Threads", exception=e,
                                    trace=traceback.format_exc())
 
-    #   TODO do error handling if the trello list is empty
     #   Command to return all cards in the list from trello.
     @app_commands.command(name="trello_cards")
-    @app_commands.choices(boards=[Choice(name='Frontend', value=FRONTEND_lIST_ID),
-                                  Choice(name='Backend', value=BACKEND_LIST_ID)])
     @app_commands.choices(number_of_items=[Choice(name='5', value=5),
                                            Choice(name='10', value=10),
                                            Choice(name='15', value=15),
                                            Choice(name='20', value=20),
                                            Choice(name='25', value=25)])
-    async def get_trello_cards(self, interaction: discord.Interaction, boards: Choice[str],
+    @app_commands.choices(trello_list_id=get_list_id_as_choice(FRONTEND_ID))
+    async def get_trello_cards(self, interaction: discord.Interaction,
+                               trello_list_id: Choice[str],
                                number_of_items: Optional[Choice[int]] = None):
         try:
             number_of_items = number_of_items or Choice(name='10 Default',
                                                         value=10)  # If the number of items is empty then it will assign 10 to it.
             my_requests = TrelloRequests()
-            cards = my_requests.get_cards(boards.value)  # boards.value returns the list id of the board
+            cards = my_requests.get_cards(trello_list_id.value)  # boards.value returns the list id of the board
             if len(cards) == 0:
                 error_embed = CreateEmbeds().create_green_embed(title="Empty List",
                                                                 field_name=random.choice(
@@ -104,6 +110,9 @@ class Threads(commands.Cog):
         except Exception as e:
             await Audit().send_log(interaction=interaction, title="In Get Trello Cards", exception=e,
                                    trace=traceback.format_exc())
+
+
+
 
 
 async def setup(bot):
