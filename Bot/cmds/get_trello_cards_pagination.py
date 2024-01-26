@@ -6,14 +6,18 @@ import re
 # todo Clean the code, Maybe just get every param in the init function.
 
 class SelectPosts(discord.ui.Select):
-    def __init__(self, options_list, current_page):
+    def __init__(self, options_list, current_page, interaction_author_id):
         super().__init__(options=options_list[current_page], placeholder="Select the cards for details.",
                          max_values=len(options_list[current_page]))
+        self.interaction_author_id = interaction_author_id
 
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.send_message(self.values)
-        self.view.value = self.values
-        self.view.stop()
+        if interaction.user.id == self.interaction_author_id:  # To check if the command auther is interacting with the message.
+            await interaction.response.send_message(self.values)
+            self.view.value = self.values
+            self.view.stop()
+        else:
+            await interaction.response.send_message("You can't interact with this message!", ephemeral=True)
 
 
 class Pagination(discord.ui.View):
@@ -33,10 +37,11 @@ class Pagination(discord.ui.View):
         self.options_list = []
         self.dropdown_elements = None
         self.dropdown_value = None
+        self.interaction_author_id = interaction.user.id
 
     async def send_message(self):
 
-        self.dropdown_elements = SelectPosts(self.options_list, self.current_page)
+        self.dropdown_elements = SelectPosts(self.options_list, self.current_page, self.interaction_author_id)
         self.add_item(self.dropdown_elements)
         self.disable_back_buttons()
         if self.total_page == 0:
@@ -50,7 +55,7 @@ class Pagination(discord.ui.View):
 
     async def update_embed(self):
         self.remove_item(self.dropdown_elements)
-        self.dropdown_elements = SelectPosts(self.options_list, self.current_page)
+        self.dropdown_elements = SelectPosts(self.options_list, self.current_page, self.interaction_user_id)
         self.add_item(self.dropdown_elements)
         self.embeds[self.current_page].set_footer(text=f"Page {self.current_page + 1} of {self.total_page + 1}")
         await self.interaction.edit_original_response(embed=self.embeds[self.current_page], view=self)
@@ -144,7 +149,7 @@ class Pagination(discord.ui.View):
 
 
 def clean_description(input_text: str) -> str:
-    return re.sub(r'\[[^\]]*\]', '', input_text)    # Removes things in []
+    return re.sub(r'\[[^\]]*\]', '', input_text)  # Removes things in []
 
 
 async def card_detail_embed(selected_index: list, cards, interaction):

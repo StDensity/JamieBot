@@ -54,14 +54,18 @@ def check_labels(trello_labels, tag):
 
 # Used to generate options for the dropdown view.
 class SelectPosts(discord.ui.Select):
-    def __init__(self, options_list, current_page):
+    def __init__(self, options_list, current_page, interaction_author_id):
         super().__init__(options=options_list[current_page], placeholder="Which dropdown_elements do you want to push.",
                          max_values=len(options_list[current_page]))
+        self.interaction_author_id = interaction_author_id
 
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.send_message(self.values)
-        self.view.value = self.values
-        self.view.stop()
+        if interaction.user.id == self.interaction_author_id:  # To check if the command auther is interacting with the message.
+            await interaction.response.send_message(self.values)
+            self.view.value = self.values
+            self.view.stop()
+        else:
+            await interaction.response.send_message("You can't interact with this message!", ephemeral=True)
 
 
 # TODO disable buttons when there is only one page
@@ -87,12 +91,13 @@ class PaginationDropdown(discord.ui.View):
         self.dropdown_value = None
         self.can_push = []  # A list denoting if the post can be pushed. 0 If it cannot be pushed because of no corresponding tag.
         # 1 if it cannot be pushed because, it's already there. # 2 if it can be pushed.
+        self.interaction_author_id = interaction.user.id
 
     async def paginate(self):
         await self.create_embed()
 
     async def send_message(self):
-        self.dropdown_elements = SelectPosts(self.options_list, self.current_page)
+        self.dropdown_elements = SelectPosts(self.options_list, self.current_page, self.interaction_author_id)
         self.add_item(self.dropdown_elements)
         self.disable_back_buttons()
         if self.total_page == 0:
